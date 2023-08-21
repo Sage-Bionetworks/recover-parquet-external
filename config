@@ -1,3 +1,0 @@
-[profile service-catalog]
-region=us-east-1
-credential_process = "/absolute/path/to/synapse_creds.sh" "https://sc.sageit.org" "<PERSONAL_ACCESS_TOKEN>"
