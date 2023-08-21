@@ -5,8 +5,8 @@ RUN apt-get update -y && apt-get upgrade -y && apt-get install -y python3 python
 RUN python3 -m pip install --upgrade pip
 RUN pip install synapseclient
 
-RUN git clone https://github.com/pranavanba/recover-sts-synindex.git /root/recover-sts-synindex
-RUN Rscript /root/recover-sts-synindex/install_requirements.R
+RUN git clone https://github.com/pranavanba/recover-parquet-external.git /root/recover-parquet-external
+RUN Rscript /root/recover-parquet-external/install_requirements.R
 
 RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" \
     && unzip awscliv2.zip \
@@ -20,7 +20,7 @@ RUN curl -o /root/synapse_creds.sh https://raw.githubusercontent.com/Sage-Bionet
 
 RUN mkdir -p /root/.aws
 
-COPY config /root/.aws/config
+RUN curl -o /root/.aws/config https://raw.githubusercontent.com/Sage-Bionetworks-IT/service-catalog-ssm-access/main/config
 
 RUN sed -i -e "s|\"<PERSONAL_ACCESS_TOKEN>\"|\"\${AWS_SYNAPSE_TOKEN}\"\n|g" \
     -e "s|/absolute/path/to/synapse_creds.sh|/root/synapse_creds.sh|g" \
@@ -29,4 +29,4 @@ RUN sed -i -e "s|\"<PERSONAL_ACCESS_TOKEN>\"|\"\${AWS_SYNAPSE_TOKEN}\"\n|g" \
 CMD R -e "q()" \
     && sed -i -e "s|\${AWS_SYNAPSE_TOKEN}|$AWS_SYNAPSE_TOKEN|g"\
     /root/.aws/config \
-    && Rscript /root/recover-sts-synindex/sts_synindex.R
+    && Rscript /root/recover-parquet-external/sts_synindex_external.R
