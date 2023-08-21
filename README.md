@@ -1,4 +1,4 @@
-# recover-sts-synindex
+# recover-parquet-external
 
 [![Build and publish a Docker image](https://github.com/pranavanba/recover-parquet-external/actions/workflows/docker-build.yml/badge.svg?branch=main)](https://github.com/pranavanba/recover-parquet-external/actions/workflows/docker-build.yml)
 
@@ -49,6 +49,6 @@ Note: If you are having issues during installation of the Synapse CLI client, co
 
 1. Pull the docker image with `docker pull ghcr.io/sage-bionetworks/recover-parquet-external:main`
 2. Run a container with `docker run -e AWS_SYNAPSE_TOKEN=<aws-cli-token> -e SYNAPSE_AUTH_TOKEN=<synapse-auth-token> <image-name>`
-3. If desired, setup a scheduled job (AWS Scheduled Jobs, cron, etc.) using the docker image (ghcr.io/sage-bionetworks/recover-sts-synindex:main) to run the pipeline at your desired frequency
+3. If desired, setup a scheduled job (AWS Scheduled Jobs, cron, etc.) using the docker image (ghcr.io/sage-bionetworks/recover-parquet-external:main) to run the pipeline at your desired frequency
 
 Note: Replace `<aws-cli-token>` and `<synapse-auth-token>` with the actual token values. When provisioning a Scheduled Job, `<aws-cli-token>` and `<synapse-auth-token>` should be specified in the `Secrets` and/or `EnvVars` fields of the provisioning settings page.
