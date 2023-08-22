@@ -1,6 +1,6 @@
 # recover-parquet-external
 
-[![Build and publish a Docker image](https://github.com/pranavanba/recover-parquet-external/actions/workflows/docker-build.yml/badge.svg?branch=main)](https://github.com/pranavanba/recover-parquet-external/actions/workflows/docker-build.yml)
+[![Build and publish a Docker image](https://github.com/Sage-Bionetworks/recover-parquet-external/actions/workflows/docker-build.yml/badge.svg?branch=main)](https://github.com/Sage-Bionetworks/recover-parquet-external/actions/workflows/docker-build.yml)
 
 ## Purpose
 This repository hosts code for the pipeline that indexes files from S3 storage in a Synapse project/folder using the STS process. The code is written in R and offers two methods for running the pipeline:
