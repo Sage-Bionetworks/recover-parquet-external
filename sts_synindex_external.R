@@ -3,6 +3,7 @@ library(arrow)
 library(dplyr)
 library(synapserutils)
 library(rjson)
+library(rlang)
 
 synapser::synLogin(authToken = Sys.getenv('SYNAPSE_AUTH_TOKEN'))
 source('~/recover-sts-synindex/sts_params_external.R')
@@ -29,6 +30,11 @@ Sys.setenv('AWS_ACCESS_KEY_ID'=token$accessKeyId,
 #### Sync bucket to local dir####
 sync_cmd <- glue::glue('aws s3 sync {base_s3_uri} {AWS_PARQUET_DOWNLOAD_LOCATION} --exclude "*owner.txt*" --exclude "*archive*"')
 system(sync_cmd)
+
+
+# Filter parquet datasets -------------------------------------------------
+
+source('~/recover-parquet-external/filtering.R')
 
 ### Copy unfiltered parquet datasets to new location with filtered parquet datasets ####
 duplicate_folder <- function(source_folder, destination_folder) {
