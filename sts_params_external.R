@@ -13,16 +13,16 @@ AWS_PARQUET_DOWNLOAD_LOCATION <- './temp_aws_parquet'
 PARQUET_FILTERED_LOCATION <- './parquet_filtered'
 
 datasets_to_filter <- c("dataset_enrolledparticipants", 
-                        "dataset_enrolledparticipants_customfields_symptoms", 
-                        "dataset_enrolledparticipants_customfields_treatments", 
+                        # "dataset_enrolledparticipants_customfields_symptoms", 
+                        # "dataset_enrolledparticipants_customfields_treatments", 
                         "dataset_healthkitv2heartbeat", 
                         "dataset_healthkitv2samples", 
                         "dataset_healthkitv2workouts", 
                         "dataset_symptomlog")
 
 cols_to_drop <- list(c("EmailAddress", "DateOfBirth", "CustomFields_DeviceOrderInfo", "FirstName", "LastName", "PostalCode", "MiddleName"),
-                     c("name"),
-                     c("name"),
+                     # c("name"),
+                     # c("name"),
                      c("Source_Name"),
                      c("Source_Name", "Device_Name"),
                      c("Source_Name", "Metadata_HKWorkoutBrandName", "Metadata_Coach", "Metadata_trackerMetadata", "Metadata_SWMetadataKeyCustomWorkoutTitle", "Metadata_location"),
