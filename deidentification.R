@@ -5,33 +5,27 @@ library(dplyr)
 
 synLogin()
 
-files <- synapserutils::syncFromSynapse('syn52316269')
+system('synapse get -r syn52316269 --downloadLocation ./dictionaries/ --manifest suppress')
 
-names(files) <- 
-  lapply(files, function(x) x$name) %>% 
-  {gsub("Dictionary_|.csv", "", ., perl = T)}
-
-store_dicts <- function(files_list) {
+store_dicts <- function(files_dir) {
   dicts <- list()
-  # dicts_approved <- list()
-  # dicts_unapproved <- list()
-  
-  for (file_entry in files_list) {
-    file_path <- file_entry$path
+
+  for (f in list.files(files_dir)) {
+    file_path <- file.path(files_dir, file.path(f))
     filename <- tools::file_path_sans_ext(basename(file_path))
     new_dict_name <- sub("^Dictionary_", "", filename)
     data <- read.csv(file_path)
-    # approved <- data[[1]][which(data[[2]]=="APPROVED")]
-    # unapproved <- data[[1]][which(data[[2]]=="UNAPPROVED")]
-    # dicts_approved[[new_dict_name]] <- approved
-    # dicts_unapproved[[new_dict_name]] <- unapproved
     dicts[[new_dict_name]] <- data
   }
   return(dicts)
-  # return(list(dicts_approved, dicts_unapproved))
 }
 
-dicts <- store_dicts(files_list = files)
+dicts <- store_dicts('./dictionaries')
+
+for (i in seq_along(dicts)) {
+  dicts[[i]][[1]] <- trimws(dicts[[i]][[1]])
+}
+
 # names(dicts) <- c('approved', 'unapproved')
 
 # # left_join(dicts[[1]], open_dataset(paste0('./temp_aws_parquet/',names(dicts)[1])) %>% collect())
@@ -61,16 +55,27 @@ dicts <- store_dicts(files_list = files)
 #   }
 # }
 # 
-# fitbitactivitylogs <- 
-#   open_dataset(paste0('./temp_aws_parquet/', names(dicts)[3])) %>% 
-#   collect() %>% 
-#   mutate(ActivityName = tolower(ActivityName))
+# tmpdf <-
+#   open_dataset(paste0('./temp_aws_parquet/', names(dicts)[3])) %>%
+#   collect()
 # 
-# left_join(fitbitactivitylogs, dicts[[3]]) %>% select(ActivityName, status) %>% 
-#   mutate(ActivityName=ifelse(status!="APPROVED", NA, ActivityName)) %>% View
+# # left_join(tmpdf, dicts[[3]]) %>% select(ActivityName, status) %>%
+# #   mutate(ActivityName=ifelse(status!="APPROVED", NA, ActivityName)) %>% View
+# 
+# var_name <- colnames(dicts[[1]])[1]
+# status_col <- colnames(dicts[[1]])[2]
+# 
+# tmpdf[[var_name]] <- tolower(tmpdf[[var_name]])
+# 
+# out <- left_join(tmpdf, dicts[[3]])
+# out[[var_name]] <- trimws(out[[var_name]])
+# new_to_review <- out[[var_name]][which(is.na(out[[status_col]]))] %>% unique()
+# out[[var_name]] <- ifelse(out[[status_col]]=="APPROVED", out[[var_name]], NA)
 
-fx <- function(dicts_list, parquet_dir) {
+deidentify <- function(dicts_list, parquet_dir) {
   out_list <- list()
+  review_list <- list()
+  
   for (i in seq_along(dicts_list)) {
     var_name <- colnames(dicts_list[[i]])[1]
     status_col <- colnames(dicts_list[[i]])[2]
@@ -78,14 +83,47 @@ fx <- function(dicts_list, parquet_dir) {
     df <- open_dataset(paste0(parquet_dir, '/', names(dicts_list)[i])) %>% collect()
     df[[var_name]] <- tolower(df[[var_name]])
     
-    out <- left_join(df, dicts_list[[i]])
+    out <- df
     out[[var_name]] <- trimws(out[[var_name]])
-    # out[[var_name]] <- ifelse(out[[status_col]]!="APPROVED", NA, out[[var_name]])
+
+    needs_review <- character(0)
+    
+    for (j in 1:nrow(out)) {
+      val <- out[[var_name]][j]
+      status <- dicts_list[[i]][[2]][which(dicts_list[[i]][[1]]==val)]
+      
+      if (val %in% dicts_list[[i]][[var_name]]) {
+        if (status == "UNAPPROVED") {
+          out[[var_name]][j] <- NA
+        }
+      } else {
+        needs_review <- c(needs_review, val)
+        out[[var_name]][j] <- NA
+      }
+    }
+    
+    needs_review <- unique(needs_review)
     
     out_list[[i]] <- out
+    review_list[[i]] <- needs_review
   }
-  return(out_list)
+  names(out_list) <- names(dicts_list)
+  names(review_list) <- names(dicts_list)
+  
+  results <- list(out_list, review_list)
+  names(results) <- c('deidentified_datasets', 'values_to_review')
+  
+  return(results)
 }
 
-tmp <- fx(dicts, AWS_PARQUET_DOWNLOAD_LOCATION)
+deidentified_results <- deidentify(dicts, AWS_PARQUET_DOWNLOAD_LOCATION)
 
+for (i in seq_along(deidentified_results$deidentified_datasets)) {
+  dir <- file.path(AWS_PARQUET_DOWNLOAD_LOCATION, names(deidentified_results$deidentified_datasets)[[i]])
+  unlink(dir, recursive = T, force = T)
+  dir.create(dir)
+  
+  arrow::write_dataset(dataset = deidentified_results$deidentified_datasets[[i]], 
+                       path = file.path(AWS_PARQUET_DOWNLOAD_LOCATION, names(deidentified_results$deidentified_datasets)[[i]]), 
+                       max_rows_per_file = 900000)
+}
