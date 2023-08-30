@@ -3,7 +3,6 @@ library(arrow)
 library(dplyr)
 library(synapserutils)
 library(rjson)
-library(rlang)
 
 synapser::synLogin(authToken = Sys.getenv('SYNAPSE_AUTH_TOKEN'))
 source('~/recover-sts-synindex/sts_params_external.R')
