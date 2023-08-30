@@ -26,52 +26,6 @@ for (i in seq_along(dicts)) {
   dicts[[i]][[1]] <- trimws(dicts[[i]][[1]])
 }
 
-# names(dicts) <- c('approved', 'unapproved')
-
-# # left_join(dicts[[1]], open_dataset(paste0('./temp_aws_parquet/',names(dicts)[1])) %>% collect())
-# open_dataset(paste0('./temp_aws_parquet/', names(dicts)[1])) %>% 
-#   collect() %>% 
-#   mutate(colnames(dicts[[1]])[1]=if_else(tolower(colnames(dicts[[1]])[1]) %in% dicts[[1]][[1]]))
-# 
-# for (i in seq_along(dicts)) {
-#   col_name <- as.character(colnames(dicts[[i]])[1])
-#   status_col <- as.character(colnames(dicts[[i]])[2])
-# 
-#   parquet_dataset <- file.path(AWS_PARQUET_DOWNLOAD_LOCATION, paste0(names(dicts)[i]))
-# 
-#   if (dir.exists(parquet_dataset)) {
-#     parquet_table <- arrow::open_dataset(parquet_dataset) %>% collect()
-# 
-#     search_values <- tolower(as.character(dicts[[i]][[1]]))
-#     matching_rows <- tolower(parquet_table[[col_name]]) %in% search_values
-# 
-#     update_indices <- which(!is.na(matching_rows))
-#     non_approved_indices <- update_indices[parquet_table[[status_col]][matching_rows[update_indices]] != "APPROVED"]
-# # 
-# #     if (length(non_approved_indices) > 0) {
-# #       parquet_table[[col_name]][matching_rows[non_approved_indices]] <- NA
-# #       arrow::write_parquet(parquet_table, parquet_dataset)
-# #     }
-#   }
-# }
-# 
-# tmpdf <-
-#   open_dataset(paste0('./temp_aws_parquet/', names(dicts)[3])) %>%
-#   collect()
-# 
-# # left_join(tmpdf, dicts[[3]]) %>% select(ActivityName, status) %>%
-# #   mutate(ActivityName=ifelse(status!="APPROVED", NA, ActivityName)) %>% View
-# 
-# var_name <- colnames(dicts[[1]])[1]
-# status_col <- colnames(dicts[[1]])[2]
-# 
-# tmpdf[[var_name]] <- tolower(tmpdf[[var_name]])
-# 
-# out <- left_join(tmpdf, dicts[[3]])
-# out[[var_name]] <- trimws(out[[var_name]])
-# new_to_review <- out[[var_name]][which(is.na(out[[status_col]]))] %>% unique()
-# out[[var_name]] <- ifelse(out[[status_col]]=="APPROVED", out[[var_name]], NA)
-
 deidentify <- function(dicts_list, parquet_dir) {
   out_list <- list()
   review_list <- list()
