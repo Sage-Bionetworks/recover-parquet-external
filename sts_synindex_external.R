@@ -31,10 +31,11 @@ unlink(AWS_PARQUET_DOWNLOAD_LOCATION, recursive = T, force = T)
 sync_cmd <- glue::glue('aws s3 sync {base_s3_uri} {AWS_PARQUET_DOWNLOAD_LOCATION} --exclude "*owner.txt*" --exclude "*archive*"')
 system(sync_cmd)
 
+
 # Filter parquet datasets -------------------------------------------------
 source('~/recover-parquet-external/filtering.R')
 
-### Copy unfiltered parquet datasets to new location with filtered parquet datasets ####
+# Copy unfiltered parquet datasets to new location with filtered parquet datasets
 duplicate_folder <- function(source_folder, destination_folder) {
   if (dir.exists(source_folder)) {
     if (!dir.exists(destination_folder)) {
@@ -77,6 +78,10 @@ copy_folders_reparent(AWS_PARQUET_DOWNLOAD_LOCATION, PARQUET_FINAL_LOCATION)
 
 # Remove intermediate folders
 unlink(PARQUET_FILTERED_LOCATION, recursive = T, force = T)
+
+
+# De-identify parquet datasets --------------------------------------------
+source('~/recover-parquet-external/deidentification.R')
 
 #### Store Filtered Datasets in Synapse ####
 existing_dirs <- synGetChildren(SYNAPSE_PARENT_ID) %>% as.list()
@@ -139,6 +144,8 @@ if (nrow(synapse_fileview)>0) {
 }
 
 # Upload the contents of the parquet_final folder to Synapse
-for (i in seq_along(synapse_manifest_to_upload$path)) {
-  synStore(File(synapse_manifest_to_upload$path[i], parent=synapse_manifest_to_upload$parent[i]))
-}
+system.time(
+  for (i in seq_along(synapse_manifest_to_upload$path)) {
+    synStore(File(synapse_manifest_to_upload$path[i], parent=synapse_manifest_to_upload$parent[i]))
+  }
+)
