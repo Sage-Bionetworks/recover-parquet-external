@@ -5,6 +5,9 @@ library(dplyr)
 
 synLogin()
 
+unlink('./dictionaries/', recursive = T, force = T)
+
+# Get dictionaries --------------------------------------------------------
 system('synapse get -r syn52316269 --downloadLocation ./dictionaries/ --manifest suppress')
 
 store_dicts <- function(files_dir) {
@@ -26,6 +29,8 @@ for (i in seq_along(dicts)) {
   dicts[[i]][[1]] <- trimws(dicts[[i]][[1]])
 }
 
+
+# De-identify datasets that have dictionaries -----------------------------
 deidentify <- function(dicts_list, parquet_dir) {
   out_list <- list()
   review_list <- list()
@@ -70,14 +75,34 @@ deidentify <- function(dicts_list, parquet_dir) {
   return(results)
 }
 
-deidentified_results <- deidentify(dicts, AWS_PARQUET_DOWNLOAD_LOCATION)
+deidentified_results <- deidentify(dicts, PARQUET_FINAL_LOCATION)
 
+
+# Write de-identified datasets to parquet datasets dir --------------------
 for (i in seq_along(deidentified_results$deidentified_datasets)) {
-  dir <- file.path(AWS_PARQUET_DOWNLOAD_LOCATION, names(deidentified_results$deidentified_datasets)[[i]])
+  dir <- file.path(PARQUET_FINAL_LOCATION, names(deidentified_results$deidentified_datasets)[[i]])
   unlink(dir, recursive = T, force = T)
   dir.create(dir)
   
   arrow::write_dataset(dataset = deidentified_results$deidentified_datasets[[i]], 
-                       path = file.path(AWS_PARQUET_DOWNLOAD_LOCATION, names(deidentified_results$deidentified_datasets)[[i]]), 
-                       max_rows_per_file = 900000)
+                       path = file.path(PARQUET_FINAL_LOCATION, names(deidentified_results$deidentified_datasets)[[i]]), 
+                       max_rows_per_file = 900000,
+                       partitioning = c('cohort'), 
+                       existing_data_behavior = 'delete_matching')
+}
+
+
+# Store vectors containing values to review in Synapse --------------------
+dir.create('./dictionaries/new_to_review')
+for (i in seq_along(deidentified_results$values_to_review)) {
+  if (length(deidentified_results$values_to_review[[i]]) > 0) {
+    f <- write.csv(deidentified_results$values_to_review[[i]], 
+                   file = paste0('./dictionaries/new_to_review/values_to_review_',names(deidentified_results$values_to_review)[[i]], '.csv'), 
+                   row.names = F)
+  }
+}
+
+for (i in seq_along(list.files('./dictionaries/new_to_review/'))) {
+  synStore(File(path = paste0('./dictionaries/new_to_review/', list.files('./dictionaries/new_to_review/')[i]), 
+                parent = 'syn52409518'))
 }
