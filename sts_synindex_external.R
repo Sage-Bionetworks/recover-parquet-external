@@ -5,7 +5,7 @@ library(synapserutils)
 library(rjson)
 
 synapser::synLogin(authToken = Sys.getenv('SYNAPSE_AUTH_TOKEN'))
-source('~/recover-sts-synindex/sts_params_external.R')
+source('~/recover-parquet-external/sts_params_external.R')
 
 #### Get STS token for bucket in order to sync to local dir ####
 
