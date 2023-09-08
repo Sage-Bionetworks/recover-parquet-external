@@ -27,12 +27,11 @@ Sys.setenv('AWS_ACCESS_KEY_ID'=token$accessKeyId,
            'AWS_SESSION_TOKEN'=token$sessionToken)
 
 #### Sync bucket to local dir####
+unlink(AWS_PARQUET_DOWNLOAD_LOCATION, recursive = T, force = T)
 sync_cmd <- glue::glue('aws s3 sync {base_s3_uri} {AWS_PARQUET_DOWNLOAD_LOCATION} --exclude "*owner.txt*" --exclude "*archive*"')
 system(sync_cmd)
 
-
 # Filter parquet datasets -------------------------------------------------
-
 source('~/recover-parquet-external/filtering.R')
 
 ### Copy unfiltered parquet datasets to new location with filtered parquet datasets ####
@@ -52,6 +51,7 @@ duplicate_folder <- function(source_folder, destination_folder) {
   }
 }
 
+unlink(PARQUET_FINAL_LOCATION, recursive = T, force = T)
 duplicate_folder(source_folder = PARQUET_FILTERED_LOCATION, 
                  destination_folder = PARQUET_FINAL_LOCATION)
 
@@ -66,17 +66,19 @@ copy_folders_reparent <- function(source_folder, destination_folder) {
     if (!dir.exists(dest_path)) {
       system(glue::glue('cp -r {source_path} {destination_folder}'))
 
-      print(paste0("Copied: ", folder))
+      cat("Copied:", folder, '\n')
     } else {
-      print(paste0("Skipped: ", folder, " (Folder already exists in ", destination_folder, ")"))
+      cat("Skipped:", folder, "- Folder already exists in", destination_folder, '\n')
     }
   }
 }
 
 copy_folders_reparent(AWS_PARQUET_DOWNLOAD_LOCATION, PARQUET_FINAL_LOCATION)
 
-#### Store Filtered Datasets in Synapse ####
+# Remove intermediate folders
+unlink(PARQUET_FILTERED_LOCATION, recursive = T, force = T)
 
+#### Store Filtered Datasets in Synapse ####
 existing_dirs <- synGetChildren(SYNAPSE_PARENT_ID) %>% as.list()
 
 if(length(existing_dirs)>0) {
@@ -84,6 +86,17 @@ if(length(existing_dirs)>0) {
     synDelete(existing_dirs[[i]]$id)
   }
 }
+
+# Modify cohort identifier in dir name
+replace_equal_with_underscore <- function(directory_path) {
+  new_directory_path <- gsub("=", "_", directory_path)
+  if (directory_path != new_directory_path) {
+    file.rename(directory_path, new_directory_path)
+    cat("Renamed:", directory_path, "to", new_directory_path, "\n")
+  }
+}
+
+invisible(lapply(list.dirs(PARQUET_FINAL_LOCATION), replace_equal_with_underscore))
 
 # Generate manifest of existing files
 SYNAPSE_AUTH_TOKEN <- Sys.getenv('SYNAPSE_AUTH_TOKEN')
@@ -114,9 +127,16 @@ if (nrow(synapse_fileview)>0) {
         dplyr::select(parent = parentId,
                       s3_file_key = dataFileKey,
                       md5_hash = dataFileMD5Hex))
-  } else {
-    synapse_manifest_to_upload <- synapse_manifest
-  }
+  synapse_manifest_to_upload <- 
+    synapse_manifest_to_upload %>% 
+    mutate(file_key = gsub("cohort_", "cohort=", file_key),
+           s3_file_key = gsub("cohort_", "cohort=", s3_file_key))
+} else {
+  synapse_manifest_to_upload <- 
+    synapse_manifest %>% 
+    mutate(file_key = gsub("cohort_", "cohort=", file_key),
+           s3_file_key = gsub("cohort_", "cohort=", s3_file_key))
+}
 
 # Upload the contents of the parquet_final folder to Synapse
 for (i in seq_along(synapse_manifest_to_upload$path)) {
