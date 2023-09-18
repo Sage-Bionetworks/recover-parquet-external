@@ -21,6 +21,9 @@ if (PARQUET_BUCKET==token$bucket && PARQUET_BUCKET_BASE_KEY==token$baseKey) {
   base_s3_uri <- paste0('s3://', PARQUET_BUCKET, '/', PARQUET_BUCKET_BASE_KEY)
 }
 
+base_s3_uri_external <- paste0('s3://', PARQUET_BUCKET_EXTERNAL, '/', PARQUET_BUCKET_BASE_KEY_EXTERNAL)
+base_s3_uri_archive <- paste0('s3://', PARQUET_BUCKET_EXTERNAL, '/', PARQUET_BUCKET_BASE_KEY_ARCHIVE)
+
 # configure the environment with AWS token
 Sys.setenv('AWS_ACCESS_KEY_ID'=token$accessKeyId,
            'AWS_SECRET_ACCESS_KEY'=token$secretAccessKey,
@@ -116,7 +119,7 @@ synapse_manifest <- read.csv('./current_manifest.tsv', sep = '\t', stringsAsFact
   dplyr::filter(path != paste0(PARQUET_FINAL_LOCATION,'/owner.txt')) %>%  # need not create a dataFileHandleId for owner.txt
   dplyr::rowwise() %>% 
   dplyr::mutate(file_key = stringr::str_sub(string = path, start = STR_LEN_PARQUET_FINAL_LOCATION+2)) %>% # location of file from home folder of S3 bucket
-  dplyr::mutate(s3_file_key = paste0(file_key)) %>% # the namespace for files in the S3 bucket is S3::bucket/main/
+  dplyr::mutate(s3_file_key = paste0('main/parquet/', file_key)) %>% # the namespace for files in the S3 bucket is S3::bucket/main/
   dplyr::mutate(md5_hash = as.character(tools::md5sum(path))) %>% 
   dplyr::ungroup()
 
