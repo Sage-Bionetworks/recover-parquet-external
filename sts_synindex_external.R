@@ -147,9 +147,53 @@ if (nrow(synapse_fileview)>0) {
            s3_file_key = gsub("cohort_", "cohort=", s3_file_key))
 }
 
-# Upload the contents of the parquet_final folder to Synapse
-system.time(
-  for (i in seq_along(synapse_manifest_to_upload$path)) {
-    synStore(File(synapse_manifest_to_upload$path[i], parent=synapse_manifest_to_upload$parent[i]))
+# Archive existing datasets in bucket -------------------------------------
+date <- lubridate::today()
+archive_cmd <- glue::glue('aws s3 --profile service-catalog cp {base_s3_uri_external} {base_s3_uri_archive}{date}/ --recursive')
+system(archive_cmd)
+
+
+# Sync final parquet to bucket --------------------------------------------
+sync_cmd <- glue::glue('aws s3 --profile service-catalog sync {PARQUET_FINAL_LOCATION} {base_s3_uri_external} --exclude "*owner.txt*" --exclude "*archive*"')
+system(sync_cmd)
+
+
+# Index in synapse --------------------------------------------------------
+## For each file index it in Synapse given a parent synapse folder
+if(nrow(synapse_manifest_to_upload) > 0){ # there are some files to upload
+  for(file_number in seq(nrow(synapse_manifest_to_upload))){
+    
+    # file and related synapse parent id 
+    file_= synapse_manifest_to_upload$path[file_number]
+    parent_id = synapse_manifest_to_upload$parent[file_number]
+    s3_file_key = synapse_manifest_to_upload$s3_file_key[file_number]
+    # this would be the location of the file in the S3 bucket, in the local it is at {AWS_PARQUET_DOWNLOAD_LOCATION}/
+    
+    absolute_file_path <- tools::file_path_as_absolute(file_) # local absolute path
+    
+    temp_syn_obj <- synapser::synCreateExternalS3FileHandle(
+      bucket_name = PARQUET_BUCKET_EXTERNAL,
+      s3_file_key = s3_file_key, #
+      file_path = absolute_file_path,
+      parent = parent_id
+    )
+    
+    # synapse does not accept ':' (colon) in filenames, so replacing it with '_colon_'
+    new_fileName <- stringr::str_replace_all(temp_syn_obj$fileName, ':', '_colon_')
+    
+    f <- File(dataFileHandleId=temp_syn_obj$id,
+              parentId=parent_id,
+              name = new_fileName) ## set the new file name
+    
+    f <- synStore(f)
+    
   }
-)
+}
+
+
+# # Upload the contents of the parquet_final folder to Synapse
+# system.time(
+#   for (i in seq_along(synapse_manifest_to_upload$path)) {
+#     synStore(File(synapse_manifest_to_upload$path[i], parent=synapse_manifest_to_upload$parent[i]))
+#   }
+# )
