@@ -125,6 +125,7 @@ synapse_manifest <- read.csv('./current_manifest.tsv', sep = '\t', stringsAsFact
 
 ## All currently indexed files in Synapse
 synapse_fileview <- synapser::synTableQuery(paste0('SELECT * FROM ', SYNAPSE_FILEVIEW_ID))$filepath %>% read.csv()
+synapse_fileview <- synapser::synTableQuery(paste0('SELECT * FROM ', SYNAPSE_FILEVIEW_ID))$filepath %>% read.csv()
 
 ## find those files that are not in the fileview - files that need to be indexed
 if (nrow(synapse_fileview)>0) {
