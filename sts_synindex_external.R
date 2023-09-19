@@ -11,7 +11,7 @@ source('~/recover-parquet-external/sts_params_external.R')
 
 # Get STS credentials
 token <- synapser::synGetStsStorageToken(
-  entity = PARQUET_INTERNAL_FOLDER,
+  entity = PARQUET_FOLDER_INTERNAL,
   permission = "read_only",
   output_format = "json")
 
@@ -86,8 +86,21 @@ unlink(PARQUET_FILTERED_LOCATION, recursive = T, force = T)
 # De-identify parquet datasets --------------------------------------------
 source('~/recover-parquet-external/deidentification.R')
 
-#### Store Filtered Datasets in Synapse ####
-existing_dirs <- synGetChildren(SYNAPSE_PARENT_ID) %>% as.list()
+# Sync final parquets to bucket -------------------------------------------
+
+# Archive
+date <- lubridate::today()
+# archive_cmd <- glue::glue('aws s3 --profile service-catalog cp {base_s3_uri_external} {base_s3_uri_archive}{date}/ --recursive')
+sync_cmd <- glue::glue('aws s3 --profile service-catalog sync {PARQUET_FINAL_LOCATION} {base_s3_uri_archive}{date}/ --exclude "*owner.txt*" --exclude "*archive*"')
+system(sync_cmd)
+
+# Current
+sync_cmd <- glue::glue('aws s3 --profile service-catalog sync {PARQUET_FINAL_LOCATION} {base_s3_uri_external} --exclude "*owner.txt*" --exclude "*archive*"')
+system(sync_cmd)
+
+
+#### Index Filtered Datasets in Synapse ####
+existing_dirs <- synGetChildren(PARQUET_FOLDER_CURRENT) %>% as.list()
 
 if(length(existing_dirs)>0) {
   for (i in seq_along(existing_dirs)) {
@@ -108,7 +121,7 @@ invisible(lapply(list.dirs(PARQUET_FINAL_LOCATION), replace_equal_with_underscor
 
 # Generate manifest of existing files
 SYNAPSE_AUTH_TOKEN <- Sys.getenv('SYNAPSE_AUTH_TOKEN')
-manifest_cmd <- glue::glue('SYNAPSE_AUTH_TOKEN="{SYNAPSE_AUTH_TOKEN}" synapse manifest --parent-id {SYNAPSE_PARENT_ID} --manifest ./current_manifest.tsv {PARQUET_FINAL_LOCATION}')
+manifest_cmd <- glue::glue('SYNAPSE_AUTH_TOKEN="{SYNAPSE_AUTH_TOKEN}" synapse manifest --parent-id {PARQUET_FOLDER_CURRENT} --manifest ./current_manifest.tsv {PARQUET_FINAL_LOCATION}')
 system(manifest_cmd)
 
 ## Get a list of all files to upload and their synapse locations(parentId) 
@@ -146,16 +159,6 @@ if (nrow(synapse_fileview)>0) {
     mutate(file_key = gsub("cohort_", "cohort=", file_key),
            s3_file_key = gsub("cohort_", "cohort=", s3_file_key))
 }
-
-# Archive existing datasets in bucket -------------------------------------
-date <- lubridate::today()
-archive_cmd <- glue::glue('aws s3 --profile service-catalog cp {base_s3_uri_external} {base_s3_uri_archive}{date}/ --recursive')
-system(archive_cmd)
-
-
-# Sync final parquet to bucket --------------------------------------------
-sync_cmd <- glue::glue('aws s3 --profile service-catalog sync {PARQUET_FINAL_LOCATION} {base_s3_uri_external} --exclude "*owner.txt*" --exclude "*archive*"')
-system(sync_cmd)
 
 
 # Index in synapse --------------------------------------------------------
