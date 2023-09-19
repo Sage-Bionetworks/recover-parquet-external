@@ -93,11 +93,9 @@ sync_cmd <- glue::glue('aws s3 --profile service-catalog sync {PARQUET_FINAL_LOC
 system(sync_cmd)
 
 
+# Upload parquet datasets directory tree to Synapse ------------------------
 
 existing_dirs <- synGetChildren(PARQUET_FOLDER_ARCHIVE) %>% as.list()
-
-
-# Replicate parquet datasets' structure in Synapse ------------------------
 
 if(length(existing_dirs)>0) {
   for (i in seq_along(existing_dirs)) {
@@ -117,8 +115,11 @@ replace_equal_with_underscore <- function(directory_path) {
 invisible(lapply(list.dirs(PARQUET_FINAL_LOCATION), replace_equal_with_underscore))
 
 # Generate manifest of existing files
+sync_cmd <- glue::glue('aws s3 --profile service-catalog sync {base_s3_uri_archive} ./archive --exclude "*owner.txt*" --exclude "*archive*"')
+system(sync_cmd)
+
 SYNAPSE_AUTH_TOKEN <- Sys.getenv('SYNAPSE_AUTH_TOKEN')
-manifest_cmd <- glue::glue('SYNAPSE_AUTH_TOKEN="{SYNAPSE_AUTH_TOKEN}" synapse manifest --parent-id {PARQUET_FOLDER_ARCHIVE} --manifest ./current_manifest.tsv {PARQUET_FINAL_LOCATION}')
+manifest_cmd <- glue::glue('SYNAPSE_AUTH_TOKEN="{SYNAPSE_AUTH_TOKEN}" synapse manifest --parent-id {PARQUET_FOLDER_ARCHIVE} --manifest ./current_manifest.tsv ./archive')
 system(manifest_cmd)
 
 
