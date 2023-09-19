@@ -38,7 +38,7 @@ PARQUET_FINAL_LOCATION <- './parquet_final'
 
 # Synapse locations where the S3 bucket objects are to be indexed
 PARQUET_FOLDER_CURRENT <- 'syn52506068'
-PARQUET_FOLDER_ARCHIVE <- 'syn52506068'
+PARQUET_FOLDER_ARCHIVE <- 'syn52506069'
 
 # synID of the file view containing a list of all currently indexed S3 objects from the parquet bucket folder in Synapse
 SYNAPSE_FILEVIEW_ID <- 'syn52504776'
