@@ -5,7 +5,7 @@ library(synapserutils)
 library(rjson)
 
 synapser::synLogin(authToken = Sys.getenv('SYNAPSE_AUTH_TOKEN'))
-source('~/recover-parquet-external/sts_params_external.R')
+source('~/recover-parquet-external/params.R')
 
 #### Get STS token for bucket in order to sync to local dir ####
 
@@ -88,19 +88,16 @@ source('~/recover-parquet-external/deidentification.R')
 
 # Sync final parquets to bucket -------------------------------------------
 
-# Archive
 date <- lubridate::today()
-# archive_cmd <- glue::glue('aws s3 --profile service-catalog cp {base_s3_uri_external} {base_s3_uri_archive}{date}/ --recursive')
 sync_cmd <- glue::glue('aws s3 --profile service-catalog sync {PARQUET_FINAL_LOCATION} {base_s3_uri_archive}{date}/ --exclude "*owner.txt*" --exclude "*archive*"')
 system(sync_cmd)
 
-# Current
-sync_cmd <- glue::glue('aws s3 --profile service-catalog sync {PARQUET_FINAL_LOCATION} {base_s3_uri_external} --exclude "*owner.txt*" --exclude "*archive*"')
-system(sync_cmd)
 
 
-#### Index Filtered Datasets in Synapse ####
-existing_dirs <- synGetChildren(PARQUET_FOLDER_CURRENT) %>% as.list()
+existing_dirs <- synGetChildren(PARQUET_FOLDER_ARCHIVE) %>% as.list()
+
+
+# Replicate parquet datasets' structure in Synapse ------------------------
 
 if(length(existing_dirs)>0) {
   for (i in seq_along(existing_dirs)) {
@@ -121,82 +118,76 @@ invisible(lapply(list.dirs(PARQUET_FINAL_LOCATION), replace_equal_with_underscor
 
 # Generate manifest of existing files
 SYNAPSE_AUTH_TOKEN <- Sys.getenv('SYNAPSE_AUTH_TOKEN')
-manifest_cmd <- glue::glue('SYNAPSE_AUTH_TOKEN="{SYNAPSE_AUTH_TOKEN}" synapse manifest --parent-id {PARQUET_FOLDER_CURRENT} --manifest ./current_manifest.tsv {PARQUET_FINAL_LOCATION}')
+manifest_cmd <- glue::glue('SYNAPSE_AUTH_TOKEN="{SYNAPSE_AUTH_TOKEN}" synapse manifest --parent-id {PARQUET_FOLDER_ARCHIVE} --manifest ./current_manifest.tsv {PARQUET_FINAL_LOCATION}')
 system(manifest_cmd)
 
-## Get a list of all files to upload and their synapse locations(parentId) 
-STR_LEN_PARQUET_FINAL_LOCATION <- stringr::str_length(PARQUET_FINAL_LOCATION)
 
-## All files present locally from manifest
-synapse_manifest <- read.csv('./current_manifest.tsv', sep = '\t', stringsAsFactors = F) %>% 
-  dplyr::filter(path != paste0(PARQUET_FINAL_LOCATION,'/owner.txt')) %>%  # need not create a dataFileHandleId for owner.txt
-  dplyr::rowwise() %>% 
-  dplyr::mutate(file_key = stringr::str_sub(string = path, start = STR_LEN_PARQUET_FINAL_LOCATION+2)) %>% # location of file from home folder of S3 bucket
-  dplyr::mutate(s3_file_key = paste0('main/parquet/', file_key)) %>% # the namespace for files in the S3 bucket is S3::bucket/main/
-  dplyr::mutate(md5_hash = as.character(tools::md5sum(path))) %>% 
-  dplyr::ungroup()
-
-## All currently indexed files in Synapse
-synapse_fileview <- synapser::synTableQuery(paste0('SELECT * FROM ', SYNAPSE_FILEVIEW_ID))$filepath %>% read.csv()
-synapse_fileview <- synapser::synTableQuery(paste0('SELECT * FROM ', SYNAPSE_FILEVIEW_ID))$filepath %>% read.csv()
-
-## find those files that are not in the fileview - files that need to be indexed
-if (nrow(synapse_fileview)>0) {
-  synapse_manifest_to_upload <- 
-    synapse_manifest %>% 
-    dplyr::anti_join(
-      synapse_fileview %>% 
-        dplyr::select(parent = parentId,
-                      s3_file_key = dataFileKey,
-                      md5_hash = dataFileMD5Hex))
-  synapse_manifest_to_upload <- 
-    synapse_manifest_to_upload %>% 
-    mutate(file_key = gsub("cohort_", "cohort=", file_key),
-           s3_file_key = gsub("cohort_", "cohort=", s3_file_key))
-} else {
-  synapse_manifest_to_upload <- 
-    synapse_manifest %>% 
-    mutate(file_key = gsub("cohort_", "cohort=", file_key),
-           s3_file_key = gsub("cohort_", "cohort=", s3_file_key))
-}
-
-
-# Index in synapse --------------------------------------------------------
-## For each file index it in Synapse given a parent synapse folder
-if(nrow(synapse_manifest_to_upload) > 0){ # there are some files to upload
-  for(file_number in seq(nrow(synapse_manifest_to_upload))){
-    
-    # file and related synapse parent id 
-    file_= synapse_manifest_to_upload$path[file_number]
-    parent_id = synapse_manifest_to_upload$parent[file_number]
-    s3_file_key = synapse_manifest_to_upload$s3_file_key[file_number]
-    # this would be the location of the file in the S3 bucket, in the local it is at {AWS_PARQUET_DOWNLOAD_LOCATION}/
-    
-    absolute_file_path <- tools::file_path_as_absolute(file_) # local absolute path
-    
-    temp_syn_obj <- synapser::synCreateExternalS3FileHandle(
-      bucket_name = PARQUET_BUCKET_EXTERNAL,
-      s3_file_key = s3_file_key, #
-      file_path = absolute_file_path,
-      parent = parent_id
-    )
-    
-    # synapse does not accept ':' (colon) in filenames, so replacing it with '_colon_'
-    new_fileName <- stringr::str_replace_all(temp_syn_obj$fileName, ':', '_colon_')
-    
-    f <- File(dataFileHandleId=temp_syn_obj$id,
-              parentId=parent_id,
-              name = new_fileName) ## set the new file name
-    
-    f <- synStore(f)
-    
-  }
-}
-
-
-# # Upload the contents of the parquet_final folder to Synapse
-# system.time(
-#   for (i in seq_along(synapse_manifest_to_upload$path)) {
-#     synStore(File(synapse_manifest_to_upload$path[i], parent=synapse_manifest_to_upload$parent[i]))
+# # Index files in Synapse folder -------------------------------------------
+# 
+# ## Get a list of all files to upload and their synapse locations(parentId) 
+# STR_LEN_PARQUET_FINAL_LOCATION <- stringr::str_length(PARQUET_FINAL_LOCATION)
+# 
+# ## All files present locally from manifest
+# synapse_manifest <- read.csv('./current_manifest.tsv', sep = '\t', stringsAsFactors = F) %>% 
+#   dplyr::filter(path != paste0(PARQUET_FINAL_LOCATION,'/owner.txt')) %>%  # need not create a dataFileHandleId for owner.txt
+#   dplyr::rowwise() %>% 
+#   dplyr::mutate(file_key = stringr::str_sub(string = path, start = STR_LEN_PARQUET_FINAL_LOCATION+2)) %>% # location of file from home folder of S3 bucket
+#   dplyr::mutate(s3_file_key = paste0('main/parquet/', file_key)) %>% # the namespace for files in the S3 bucket is S3::bucket/main/
+#   dplyr::mutate(md5_hash = as.character(tools::md5sum(path))) %>% 
+#   dplyr::ungroup()
+# 
+# ## All currently indexed files in Synapse
+# synapse_fileview <- synapser::synTableQuery(paste0('SELECT * FROM ', SYNAPSE_FILEVIEW_ID))$filepath %>% read.csv()
+# synapse_fileview <- synapser::synTableQuery(paste0('SELECT * FROM ', SYNAPSE_FILEVIEW_ID))$filepath %>% read.csv()
+# 
+# ## find those files that are not in the fileview - files that need to be indexed
+# if (nrow(synapse_fileview)>0) {
+#   synapse_manifest_to_upload <- 
+#     synapse_manifest %>% 
+#     dplyr::anti_join(
+#       synapse_fileview %>% 
+#         dplyr::select(parent = parentId,
+#                       s3_file_key = dataFileKey,
+#                       md5_hash = dataFileMD5Hex))
+#   synapse_manifest_to_upload <- 
+#     synapse_manifest_to_upload %>% 
+#     mutate(file_key = gsub("cohort_", "cohort=", file_key),
+#            s3_file_key = gsub("cohort_", "cohort=", s3_file_key))
+# } else {
+#   synapse_manifest_to_upload <- 
+#     synapse_manifest %>% 
+#     mutate(file_key = gsub("cohort_", "cohort=", file_key),
+#            s3_file_key = gsub("cohort_", "cohort=", s3_file_key))
+# }
+# 
+# ## For each file index it in Synapse given a parent synapse folder
+# if(nrow(synapse_manifest_to_upload) > 0){ # there are some files to upload
+#   for(file_number in seq(nrow(synapse_manifest_to_upload))){
+#     
+#     # file and related synapse parent id 
+#     file_= synapse_manifest_to_upload$path[file_number]
+#     parent_id = synapse_manifest_to_upload$parent[file_number]
+#     s3_file_key = synapse_manifest_to_upload$s3_file_key[file_number]
+#     # this would be the location of the file in the S3 bucket, in the local it is at {AWS_PARQUET_DOWNLOAD_LOCATION}/
+#     
+#     absolute_file_path <- tools::file_path_as_absolute(file_) # local absolute path
+#     
+#     temp_syn_obj <- synapser::synCreateExternalS3FileHandle(
+#       bucket_name = PARQUET_BUCKET_EXTERNAL,
+#       s3_file_key = s3_file_key, #
+#       file_path = absolute_file_path,
+#       parent = parent_id
+#     )
+#     
+#     # synapse does not accept ':' (colon) in filenames, so replacing it with '_colon_'
+#     new_fileName <- stringr::str_replace_all(temp_syn_obj$fileName, ':', '_colon_')
+#     
+#     f <- File(dataFileHandleId=temp_syn_obj$id,
+#               parentId=parent_id,
+#               name = new_fileName) ## set the new file name
+#     
+#     f <- synStore(f)
+#     
 #   }
-# )
+# }
+
