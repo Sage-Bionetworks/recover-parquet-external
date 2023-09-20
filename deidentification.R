@@ -86,7 +86,7 @@ for (i in seq_along(deidentified_results$deidentified_datasets)) {
   
   arrow::write_dataset(dataset = deidentified_results$deidentified_datasets[[i]], 
                        path = file.path(PARQUET_FINAL_LOCATION, names(deidentified_results$deidentified_datasets)[[i]]), 
-                       max_rows_per_file = 900000,
+                       max_rows_per_file = 100000,
                        partitioning = c('cohort'), 
                        existing_data_behavior = 'delete_matching')
 }
