@@ -6,7 +6,7 @@ dob2age <- function(dataset, column, output=PARQUET_FILTERED_LOCATION) {
     arrow::open_dataset(sources = input_path) %>% 
       dplyr::mutate(age = lubridate::year(lubridate::today())-lubridate::year(lubridate::as_date(!!sym(column)))) %>% 
       arrow::write_dataset(path = input_path, 
-                           max_rows_per_file = 900000, 
+                           max_rows_per_file = 100000, 
                            partitioning = c('cohort'), 
                            existing_data_behavior = 'delete_matching')
   }
@@ -23,7 +23,7 @@ drop_cols_datasets <- function(dataset, columns=c(), output=PARQUET_FILTERED_LOC
     arrow::open_dataset(sources = input_path) %>% 
       dplyr::select(!columns) %>% 
       arrow::write_dataset(path = final_path, 
-                           max_rows_per_file = 900000,
+                           max_rows_per_file = 100000,
                            partitioning = c('cohort'), 
                            existing_data_behavior = 'delete_matching')
   }
