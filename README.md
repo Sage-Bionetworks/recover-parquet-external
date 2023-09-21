@@ -37,7 +37,7 @@ Note: If you are having issues during installation of the Synapse CLI client, co
 #### Clone the repo and install required R libraries
 
 7. Clone this repository and switch to the new project
-8. Modify the parameters in [sts_params_external.R](sts_params_external.R)
+8. Modify the parameters in [sts_params_external.R](params.R)
 9. Run [install_requirements.R](install_requirements.R)
 10. Start a new R session (type `q()` in the R console)
 
