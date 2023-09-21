@@ -5,7 +5,13 @@ PARQUET_BUCKET <- 'recover-processed-data'
 
 PARQUET_BUCKET_BASE_KEY <- 'main/parquet/'
 
-PARQUET_INTERNAL_FOLDER <- 'syn51406699'
+PARQUET_BUCKET_EXTERNAL <- 'recover-main-project'
+
+PARQUET_BUCKET_BASE_KEY_ARCHIVE <- 'main/archive/'
+
+PARQUET_BUCKET_BASE_KEY_EXTERNAL <- 'main/parquet/'
+
+PARQUET_FOLDER_INTERNAL <- 'syn51406699'
 
 # Local location where parquet bucket files are synced to
 AWS_PARQUET_DOWNLOAD_LOCATION <- './temp_aws_parquet'
@@ -30,8 +36,9 @@ cols_to_drop <- list(c("EmailAddress", "DateOfBirth", "CustomFields_DeviceOrderI
 
 PARQUET_FINAL_LOCATION <- './parquet_final'
 
-# Synapse location where the S3 bucket objects are listed
-SYNAPSE_PARENT_ID <- 'syn52224315'
+# Synapse locations where the S3 bucket objects are to be indexed
+PARQUET_FOLDER_CURRENT <- 'syn52506068'
+PARQUET_FOLDER_ARCHIVE <- 'syn52506069'
 
 # synID of the file view containing a list of all currently indexed S3 objects from the parquet bucket folder in Synapse
-SYNAPSE_FILEVIEW_ID <- 'syn52146296'
+SYNAPSE_FILEVIEW_ID <- 'syn52504776'
