@@ -36,3 +36,5 @@ parquet_filtered/
 parquet_final/
 session-manager-plugin.deb
 dictionaries
+archive
+manual-archive
