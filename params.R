@@ -15,6 +15,7 @@ PARQUET_FOLDER_INTERNAL <- 'syn51406699'
 
 # Local location where parquet bucket files are synced to
 AWS_PARQUET_DOWNLOAD_LOCATION <- './temp_aws_parquet'
+AWS_ARCHIVE_DOWNLOAD_LOCATION <- './temp_aws_archive'
 
 PARQUET_FILTERED_LOCATION <- './parquet_filtered'
 
@@ -26,12 +27,12 @@ datasets_to_filter <- c("dataset_enrolledparticipants",
                         "dataset_healthkitv2workouts", 
                         "dataset_symptomlog")
 
-cols_to_drop <- list(c("EmailAddress", "DateOfBirth", "CustomFields_DeviceOrderInfo", "FirstName", "LastName", "PostalCode", "MiddleName"),
+cols_to_drop <- list(c("EmailAddress", "DateOfBirth", "CustomFields_DeviceOrderInfo", "FirstName", "LastName", "PostalCode", "MiddleName", "MobilePhone"),
                      # c("name"),
                      # c("name"),
                      c("Source_Name"),
                      c("Source_Name", "Device_Name"),
-                     c("Source_Name", "Metadata_HKWorkoutBrandName", "Metadata_Coach", "Metadata_trackerMetadata", "Metadata_SWMetadataKeyCustomWorkoutTitle", "Metadata_location"),
+                     c("Source_Name", "Metadata_HKWorkoutBrandName", "Metadata_Coach", "Metadata_trackerMetadata", "Metadata_SWMetadataKeyCustomWorkoutTitle", "Metadata_location", "metadata_workout_name", "Metadata_name"),
                      c("Value_notes", "Properties"))
 
 PARQUET_FINAL_LOCATION <- './parquet_final'
