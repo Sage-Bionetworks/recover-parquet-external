@@ -18,6 +18,11 @@ library(rjson)
 #'
 #' @return The path to the destination folder.
 #'
+#' @examples
+#' source_folder <- "path/to/source_folder"
+#' destination_folder <- "path/to/destination_folder"
+#' duplicate_folder(source_folder, destination_folder)
+#' 
 duplicate_folder <- function(source_folder, destination_folder) {
   if (!dir.exists(source_folder)) {
     stop("Source folder does not exist.")
@@ -42,6 +47,11 @@ duplicate_folder <- function(source_folder, destination_folder) {
 #' @param source_folder The path to the source folder.
 #' @param destination_folder The path to the destination folder.
 #'
+#' @examples
+#' source_folder <- "path/to/source_folder"
+#' destination_folder <- "path/to/destination_folder"
+#' copy_folders_reparent(source_folder, destination_folder)
+#' 
 copy_folders_reparent <- function(source_folder, destination_folder) {
   folders_to_copy <- 
     setdiff(
@@ -68,6 +78,9 @@ copy_folders_reparent <- function(source_folder, destination_folder) {
 #'
 #' @param directory_path The path of the directory to rename.
 #'
+#' @examples
+#' replace_equal_with_underscore("path_with=equals")
+#' 
 replace_equal_with_underscore <- function(directory_path) {
   new_directory_path <- gsub("=", "_", directory_path)
   if (directory_path != new_directory_path) {
