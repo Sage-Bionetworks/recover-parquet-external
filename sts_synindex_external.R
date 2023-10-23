@@ -7,22 +7,41 @@ library(rjson)
 
 # Functions ---------------------------------------------------------------
 
+#' Duplicate a folder
+#'
+#' This function duplicates a folder from the source to the destination. It checks
+#' if the source folder exists, and if the destination folder already exists, it
+#' gives a warning about possible file overwriting.
+#'
+#' @param source_folder The path to the source folder.
+#' @param destination_folder The path to the destination folder.
+#'
+#' @return The path to the destination folder.
+#'
 duplicate_folder <- function(source_folder, destination_folder) {
-  if (dir.exists(source_folder)) {
-    if (!dir.exists(destination_folder)) {
-      dir.create(destination_folder)
-    } else {
-      warning("Destination folder already exists. Files might be overwritten.")
-    }
-    
-    system(glue::glue('cp -r {source_folder}/* {destination_folder}'))
-    return(destination_folder)
-    
-  } else {
+  if (!dir.exists(source_folder)) {
     stop("Source folder does not exist.")
   }
+  
+  if (dir.exists(destination_folder)) {
+    warning("Destination folder already exists. Files might be overwritten.")
+  } else {
+    dir.create(destination_folder)
+  }
+  
+  system(glue::glue('cp -r {source_folder}/* {destination_folder}'))
+  
+  return(destination_folder)
 }
 
+#' Copy folders and reparent
+#'
+#' This function copies folders from the source folder to the destination folder
+#' while re-parenting them. It skips folders that already exist in the destination folder.
+#'
+#' @param source_folder The path to the source folder.
+#' @param destination_folder The path to the destination folder.
+#'
 copy_folders_reparent <- function(source_folder, destination_folder) {
   folders_to_copy <- 
     setdiff(
@@ -42,11 +61,18 @@ copy_folders_reparent <- function(source_folder, destination_folder) {
   }
 }
 
+#' Replace equal sign with underscore
+#'
+#' This function renames a directory path by replacing equal signs with underscores.
+#' If a replacement is performed, it logs the change.
+#'
+#' @param directory_path The path of the directory to rename.
+#'
 replace_equal_with_underscore <- function(directory_path) {
   new_directory_path <- gsub("=", "_", directory_path)
   if (directory_path != new_directory_path) {
     file.rename(directory_path, new_directory_path)
-    cat("Renamed:", directory_path, "to", new_directory_path, "\n")
+    return(cat("Renamed:", directory_path, "to", new_directory_path, "\n"))
   }
 }
 
