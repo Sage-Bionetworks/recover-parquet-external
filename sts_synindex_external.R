@@ -59,8 +59,8 @@ copy_folders_reparent <- function(source_folder, destination_folder) {
       list.dirs(destination_folder, recursive = F, full.names = F))
   
   for (folder in folders_to_copy) {
-    source_path <- paste0(AWS_PARQUET_DOWNLOAD_LOCATION, '/', folder)
-    dest_path <- paste0(PARQUET_FINAL_LOCATION, '/', folder)
+    source_path <- paste0(source_folder, '/', folder)
+    dest_path <- paste0(destination_folder, '/', folder)
     
     if (!dir.exists(dest_path)) {
       system(glue::glue('cp -r {source_path} {destination_folder}'))
