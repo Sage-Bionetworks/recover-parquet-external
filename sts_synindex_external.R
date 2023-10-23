@@ -199,16 +199,14 @@ if (nrow(synapse_fileview)>0) {
         dplyr::select(parent = parentId,
                       s3_file_key = dataFileKey,
                       md5_hash = dataFileMD5Hex))
-  synapse_manifest_to_upload <-
-    synapse_manifest_to_upload %>%
-    mutate(file_key = gsub("cohort_", "cohort=", file_key),
-           s3_file_key = gsub("cohort_", "cohort=", s3_file_key))
 } else {
-  synapse_manifest_to_upload <-
-    synapse_manifest %>%
-    mutate(file_key = gsub("cohort_", "cohort=", file_key),
-           s3_file_key = gsub("cohort_", "cohort=", s3_file_key))
+  synapse_manifest_to_upload <- synapse_manifest
 }
+
+synapse_manifest_to_upload <-
+  synapse_manifest_to_upload %>%
+  mutate(file_key = gsub("cohort_", "cohort=", file_key),
+         s3_file_key = gsub("cohort_", "cohort=", s3_file_key))
 
 # Index each file in Synapse
 if(nrow(synapse_manifest_to_upload) > 0){
