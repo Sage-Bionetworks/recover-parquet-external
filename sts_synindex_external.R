@@ -4,6 +4,53 @@ library(dplyr)
 library(synapserutils)
 library(rjson)
 
+
+# Functions ---------------------------------------------------------------
+
+duplicate_folder <- function(source_folder, destination_folder) {
+  if (dir.exists(source_folder)) {
+    if (!dir.exists(destination_folder)) {
+      dir.create(destination_folder)
+    } else {
+      warning("Destination folder already exists. Files might be overwritten.")
+    }
+    
+    system(glue::glue('cp -r {source_folder}/* {destination_folder}'))
+    return(destination_folder)
+    
+  } else {
+    stop("Source folder does not exist.")
+  }
+}
+
+copy_folders_reparent <- function(source_folder, destination_folder) {
+  folders_to_copy <- 
+    setdiff(
+      list.dirs(source_folder, recursive = F, full.names = F), 
+      list.dirs(destination_folder, recursive = F, full.names = F))
+  
+  for (folder in folders_to_copy) {
+    source_path <- paste0(AWS_PARQUET_DOWNLOAD_LOCATION, '/', folder)
+    dest_path <- paste0(PARQUET_FINAL_LOCATION, '/', folder)
+    
+    if (!dir.exists(dest_path)) {
+      system(glue::glue('cp -r {source_path} {destination_folder}'))
+      cat("Copied:", folder, '\n')
+    } else {
+      cat("Skipped:", folder, "- Folder already exists in", destination_folder, '\n')
+    }
+  }
+}
+
+replace_equal_with_underscore <- function(directory_path) {
+  new_directory_path <- gsub("=", "_", directory_path)
+  if (directory_path != new_directory_path) {
+    file.rename(directory_path, new_directory_path)
+    cat("Renamed:", directory_path, "to", new_directory_path, "\n")
+  }
+}
+
+# Setup -------------------------------------------------------------------
 synapser::synLogin(authToken = Sys.getenv('SYNAPSE_AUTH_TOKEN'))
 source('~/recover-parquet-external/params.R')
 
@@ -40,44 +87,9 @@ system(sync_cmd)
 source('~/recover-parquet-external/filtering.R')
 
 # Copy unfiltered parquet datasets to new location with filtered parquet datasets
-duplicate_folder <- function(source_folder, destination_folder) {
-  if (dir.exists(source_folder)) {
-    if (!dir.exists(destination_folder)) {
-      dir.create(destination_folder)
-    } else {
-      warning("Destination folder already exists. Files might be overwritten.")
-    }
-    
-    system(glue::glue('cp -r {source_folder}/* {destination_folder}'))
-    return(destination_folder)
-    
-  } else {
-    stop("Source folder does not exist.")
-  }
-}
-
 unlink(PARQUET_FINAL_LOCATION, recursive = T, force = T)
 duplicate_folder(source_folder = PARQUET_FILTERED_LOCATION, 
                  destination_folder = PARQUET_FINAL_LOCATION)
-
-copy_folders_reparent <- function(source_folder, destination_folder) {
-  folders_to_copy <- 
-    setdiff(
-      list.dirs(source_folder, recursive = F, full.names = F), 
-      list.dirs(destination_folder, recursive = F, full.names = F))
-  
-  for (folder in folders_to_copy) {
-    source_path <- paste0(AWS_PARQUET_DOWNLOAD_LOCATION, '/', folder)
-    dest_path <- paste0(PARQUET_FINAL_LOCATION, '/', folder)
-
-    if (!dir.exists(dest_path)) {
-      system(glue::glue('cp -r {source_path} {destination_folder}'))
-      cat("Copied:", folder, '\n')
-    } else {
-      cat("Skipped:", folder, "- Folder already exists in", destination_folder, '\n')
-    }
-  }
-}
 
 copy_folders_reparent(AWS_PARQUET_DOWNLOAD_LOCATION, PARQUET_FINAL_LOCATION)
 
@@ -110,14 +122,6 @@ sync_cmd <- glue::glue('aws s3 --profile service-catalog sync {base_s3_uri_archi
 system(sync_cmd)
 
 # Modify cohort identifier in dir name
-replace_equal_with_underscore <- function(directory_path) {
-  new_directory_path <- gsub("=", "_", directory_path)
-  if (directory_path != new_directory_path) {
-    file.rename(directory_path, new_directory_path)
-    cat("Renamed:", directory_path, "to", new_directory_path, "\n")
-  }
-}
-
 invisible(lapply(list.dirs(AWS_ARCHIVE_DOWNLOAD_LOCATION), replace_equal_with_underscore))
 
 SYNAPSE_AUTH_TOKEN <- Sys.getenv('SYNAPSE_AUTH_TOKEN')
