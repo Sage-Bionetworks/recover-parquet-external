@@ -214,21 +214,21 @@ if(nrow(synapse_manifest_to_upload) > 0){
     tmp <- synapse_manifest_to_upload[file_number, c("path", "parent", "s3_file_key")]
     
     absolute_file_path <- tools::file_path_as_absolute(tmp$path)
-
+    
     temp_syn_obj <- 
       synapser::synCreateExternalS3FileHandle(
         bucket_name = PARQUET_BUCKET_EXTERNAL,
         s3_file_key = tmp$s3_file_key,
         file_path = absolute_file_path,
         parent = tmp$parent)
-
+    
     new_fileName <- stringr::str_replace_all(temp_syn_obj$fileName, ':', '_colon_')
-
-    f <- 
-      synStore(
-        File(dataFileHandleId = temp_syn_obj$id,
-             parentId = tmp$parent,
-             name = new_fileName))
-
+    
+    f <- File(dataFileHandleId = temp_syn_obj$id,
+              parentId = tmp$parent,
+              name = new_fileName)
+    
+    f <- synStore(f, activity = "Indexing", activityDescription = "Indexing external parquet datasets", used = PARQUET_FOLDER_INTERNAL, executed = "")
+    
   }
 }
