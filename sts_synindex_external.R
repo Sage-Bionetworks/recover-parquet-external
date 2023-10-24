@@ -231,7 +231,11 @@ if(nrow(synapse_manifest_to_upload) > 0){
               parentId = tmp$parent,
               name = new_fileName)
     
-    f <- synStore(f, activity = "Indexing", activityDescription = "Indexing external parquet datasets", used = PARQUET_FOLDER_INTERNAL, executed = latest_commit_tree_url)
+    f <- synStore(f, 
+                  activity = "Indexing", 
+                  activityDescription = "Indexing external parquet datasets", 
+                  used = PARQUET_FOLDER_INTERNAL, 
+                  executed = latest_commit_tree_url)
     
   }
 }
