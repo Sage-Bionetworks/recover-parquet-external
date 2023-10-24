@@ -28,11 +28,13 @@ vignettes/*.pdf
 .Renviron
 *.Rproj
 # Misc files and dirs
-temp_aws_parquet
 *manifest*
 aws
 awscliv2.zip
-parquet_filtered/
-parquet_final/
 session-manager-plugin.deb
 dictionaries
+*.parquet
+*.json
+dev*
+misc*
+*temp*
