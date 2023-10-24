@@ -210,26 +210,25 @@ synapse_manifest_to_upload <-
 
 # Index each file in Synapse
 if(nrow(synapse_manifest_to_upload) > 0){
-  for(file_number in seq(nrow(synapse_manifest_to_upload))){
-    file_ <- synapse_manifest_to_upload$path[file_number]
-    parent_id <- synapse_manifest_to_upload$parent[file_number]
-    s3_file_key <- synapse_manifest_to_upload$s3_file_key[file_number]
-    absolute_file_path <- tools::file_path_as_absolute(file_)
+  for(file_number in seq_len(nrow(synapse_manifest_to_upload))){
+    tmp <- synapse_manifest_to_upload[file_number, c("path", "parent", "s3_file_key")]
+    
+    absolute_file_path <- tools::file_path_as_absolute(tmp$path)
 
     temp_syn_obj <- 
       synapser::synCreateExternalS3FileHandle(
         bucket_name = PARQUET_BUCKET_EXTERNAL,
-        s3_file_key = s3_file_key,
+        s3_file_key = tmp$s3_file_key,
         file_path = absolute_file_path,
-        parent = parent_id)
+        parent = tmp$parent)
 
     new_fileName <- stringr::str_replace_all(temp_syn_obj$fileName, ':', '_colon_')
 
-    f <- File(dataFileHandleId=temp_syn_obj$id,
-              parentId=parent_id,
-              name = new_fileName)
-
-    f <- synStore(f)
+    f <- 
+      synStore(
+        File(dataFileHandleId = temp_syn_obj$id,
+             parentId = tmp$parent,
+             name = new_fileName))
 
   }
 }
