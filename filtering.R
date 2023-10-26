@@ -1,4 +1,5 @@
-# Calculate age from DoB -----------------------------------------------------
+# Functions ---------------------------------------------------------------
+# Calculate age from DoB
 dob2age <- function(dataset, column, input = AWS_PARQUET_DOWNLOAD_LOCATION, output=PARQUET_FILTERED_LOCATION) {
   if (dataset %in% list.dirs(input, full.names = F)) {
     input_path <- paste0(input, '/', dataset)
@@ -12,9 +13,7 @@ dob2age <- function(dataset, column, input = AWS_PARQUET_DOWNLOAD_LOCATION, outp
   }
 }
 
-dob2age("dataset_enrolledparticipants", "DateOfBirth")
-
-# Drop columns with potentially identifying info --------------------------
+# Drop columns with potentially identifying info
 drop_cols_datasets <- function(dataset, columns=c(), input = AWS_PARQUET_DOWNLOAD_LOCATION, output=PARQUET_FILTERED_LOCATION) {
   if (dataset %in% list.dirs(input, full.names = F)) {
     input_path <- paste0(input, '/', dataset)
@@ -28,6 +27,10 @@ drop_cols_datasets <- function(dataset, columns=c(), input = AWS_PARQUET_DOWNLOA
                            existing_data_behavior = 'delete_matching')
   }
 }
+
+
+# Filtering ---------------------------------------------------------------
+dob2age("dataset_enrolledparticipants", "DateOfBirth")
 
 unlink(PARQUET_FILTERED_LOCATION, recursive = T, force = T)
 
