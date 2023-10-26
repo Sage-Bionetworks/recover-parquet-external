@@ -38,7 +38,7 @@ dob2age <- function(dataset, column, input = AWS_PARQUET_DOWNLOAD_LOCATION, outp
 #' @return None (invisibly returns the filtered dataset)
 #'
 #' @examples
-#' drop_cols_datasets("my_dataset", c("column1", "column2"))
+#' drop_cols_datasets("my_dataset", c("column1", "column2"), input = "./temp1", output = "./temp2")
 #'
 # Drop columns with potentially identifying info
 drop_cols_datasets <- function(dataset, columns=c(), input = AWS_PARQUET_DOWNLOAD_LOCATION, output=PARQUET_FILTERED_LOCATION) {
@@ -65,9 +65,10 @@ synLogin()
 
 pii_to_drop <- synGet('syn52523394')$path %>% read.csv()
 
-lapply(seq_len(nrow(pii_to_drop)), function(i) {
-  cat("Dropping", pii_to_drop$column_to_be_dropped[[i]], "from", pii_to_drop$dataset[[i]], "\n")
-  drop_cols_datasets(dataset = pii_to_drop$dataset[[i]], columns = pii_to_drop$column_to_be_dropped[[i]])
-})
+tmp <- 
+  lapply(seq_len(nrow(pii_to_drop)), function(i) {
+    cat(i, "Dropping", pii_to_drop$column_to_be_dropped[[i]], "from", pii_to_drop$dataset[[i]], "\n")
+    drop_cols_datasets(dataset = pii_to_drop$dataset[[i]], columns = pii_to_drop$column_to_be_dropped[[i]])
+    })
 
 rm(pii_to_drop)
