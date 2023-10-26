@@ -29,7 +29,7 @@ drop_cols_datasets <- function(dataset, columns=c(), input = AWS_PARQUET_DOWNLOA
   }
 }
 
-# unlink(PARQUET_FILTERED_LOCATION, recursive = T, force = T)
+unlink(PARQUET_FILTERED_LOCATION, recursive = T, force = T)
 
 synLogin()
 
