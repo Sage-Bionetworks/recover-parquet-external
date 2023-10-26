@@ -1,5 +1,18 @@
 # Functions ---------------------------------------------------------------
-# Calculate age from DoB
+#' Calculate age from Date of Birth
+#'
+#' This function calculates the age of individuals based on their date of birth.
+#'
+#' @param dataset The name of the dataset to process.
+#' @param column The name of the column in the dataset that contains Date of Birth (DoB) information.
+#' @param input The location where the Parquet dataset is stored. Default is AWS_PARQUET_DOWNLOAD_LOCATION.
+#' @param output The location where the filtered Parquet dataset will be saved. Default is PARQUET_FILTERED_LOCATION.
+#'
+#' @return None (invisibly returns the filtered dataset)
+#'
+#' @examples
+#' dob2age("my_dataset", "date_of_birth_column")
+#' 
 dob2age <- function(dataset, column, input = AWS_PARQUET_DOWNLOAD_LOCATION, output=PARQUET_FILTERED_LOCATION) {
   if (dataset %in% list.dirs(input, full.names = F)) {
     input_path <- paste0(input, '/', dataset)
@@ -13,6 +26,20 @@ dob2age <- function(dataset, column, input = AWS_PARQUET_DOWNLOAD_LOCATION, outp
   }
 }
 
+#' Drop columns with potentially identifying information
+#'
+#' This function removes specified columns from a dataset to eliminate potentially identifying information.
+#'
+#' @param dataset The name of the dataset to process.
+#' @param columns A character vector of column names to be dropped from the dataset.
+#' @param input The location where the Parquet dataset is stored. Default is AWS_PARQUET_DOWNLOAD_LOCATION.
+#' @param output The location where the filtered Parquet dataset will be saved. Default is PARQUET_FILTERED_LOCATION.
+#'
+#' @return None (invisibly returns the filtered dataset)
+#'
+#' @examples
+#' drop_cols_datasets("my_dataset", c("column1", "column2"))
+#'
 # Drop columns with potentially identifying info
 drop_cols_datasets <- function(dataset, columns=c(), input = AWS_PARQUET_DOWNLOAD_LOCATION, output=PARQUET_FILTERED_LOCATION) {
   if (dataset %in% list.dirs(input, full.names = F)) {
