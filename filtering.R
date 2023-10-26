@@ -1,7 +1,7 @@
 # Calculate age from DoB -----------------------------------------------------
-dob2age <- function(dataset, column, output=PARQUET_FILTERED_LOCATION) {
-  if (dataset %in% list.dirs(AWS_PARQUET_DOWNLOAD_LOCATION, full.names = F)) {
-    input_path <- paste0(AWS_PARQUET_DOWNLOAD_LOCATION, '/', dataset)
+dob2age <- function(dataset, column, input = AWS_PARQUET_DOWNLOAD_LOCATION, output=PARQUET_FILTERED_LOCATION) {
+  if (dataset %in% list.dirs(input, full.names = F)) {
+    input_path <- paste0(input, '/', dataset)
     
     arrow::open_dataset(sources = input_path) %>% 
       dplyr::mutate(age = lubridate::year(lubridate::today())-lubridate::year(lubridate::as_date(!!sym(column)))) %>% 
