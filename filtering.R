@@ -31,7 +31,13 @@ drop_cols_datasets <- function(dataset, columns=c(), output=PARQUET_FILTERED_LOC
 
 # unlink(PARQUET_FILTERED_LOCATION, recursive = T, force = T)
 
-lapply(seq_along(datasets_to_filter), function(i) {
-  cat("Dropping", cols_to_drop[[i]], "from", datasets_to_filter[i], "\n")
-  drop_cols_datasets(dataset = datasets_to_filter[i], columns = cols_to_drop[[i]])
-}) %>% invisible()
+synLogin()
+
+pii_to_drop <- synGet('syn52523394')$path %>% read.csv()
+
+lapply(seq_len(nrow(pii_to_drop)), function(i) {
+  cat("Dropping", pii_to_drop$column_to_be_dropped[[i]], "from", pii_to_drop$dataset[[i]], "\n")
+  drop_cols_datasets(dataset = pii_to_drop$dataset[[i]], columns = pii_to_drop$column_to_be_dropped[[i]])
+})
+
+rm(pii_to_drop)
