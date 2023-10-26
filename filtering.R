@@ -15,9 +15,9 @@ dob2age <- function(dataset, column, output=PARQUET_FILTERED_LOCATION) {
 dob2age("dataset_enrolledparticipants", "DateOfBirth")
 
 # Drop columns with potentially identifying info --------------------------
-drop_cols_datasets <- function(dataset, columns=c(), output=PARQUET_FILTERED_LOCATION) {
-  if (dataset %in% list.dirs(AWS_PARQUET_DOWNLOAD_LOCATION, full.names = F)) {
-    input_path <- paste0(AWS_PARQUET_DOWNLOAD_LOCATION, '/', dataset)
+drop_cols_datasets <- function(dataset, columns=c(), input = AWS_PARQUET_DOWNLOAD_LOCATION, output=PARQUET_FILTERED_LOCATION) {
+  if (dataset %in% list.dirs(input, full.names = F)) {
+    input_path <- paste0(input, '/', dataset)
     final_path <- paste0(output, '/', dataset, '/')
     
     arrow::open_dataset(sources = input_path) %>% 
