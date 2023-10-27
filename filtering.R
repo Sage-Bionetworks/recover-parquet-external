@@ -6,14 +6,13 @@
 #' @param dataset The name of the dataset to process.
 #' @param column The name of the column in the dataset that contains Date of Birth (DoB) information.
 #' @param input The location where the Parquet dataset is stored. Default is AWS_PARQUET_DOWNLOAD_LOCATION.
-#' @param output The location where the filtered Parquet dataset will be saved. Default is PARQUET_FILTERED_LOCATION.
 #'
 #' @return None (invisibly returns the filtered dataset)
 #'
 #' @examples
 #' dob2age("my_dataset", "date_of_birth_column")
 #' 
-dob2age <- function(dataset, column, input = AWS_PARQUET_DOWNLOAD_LOCATION, output=PARQUET_FILTERED_LOCATION) {
+dob2age <- function(dataset, column, input = AWS_PARQUET_DOWNLOAD_LOCATION, partitions = NULL) {
   if (dataset %in% list.dirs(input, full.names = F)) {
     input_path <- paste0(input, '/', dataset)
     
@@ -21,7 +20,7 @@ dob2age <- function(dataset, column, input = AWS_PARQUET_DOWNLOAD_LOCATION, outp
       dplyr::mutate(age = lubridate::year(lubridate::today())-lubridate::year(lubridate::as_date(!!sym(column)))) %>% 
       arrow::write_dataset(path = input_path, 
                            max_rows_per_file = 100000, 
-                           partitioning = c('cohort'), 
+                           partitioning = partitions, 
                            existing_data_behavior = 'delete_matching')
   }
 }
@@ -41,7 +40,7 @@ dob2age <- function(dataset, column, input = AWS_PARQUET_DOWNLOAD_LOCATION, outp
 #' drop_cols_datasets("my_dataset", c("column1", "column2"), input = "./temp1", output = "./temp2")
 #'
 # Drop columns with potentially identifying info
-drop_cols_datasets <- function(dataset, columns=c(), input = AWS_PARQUET_DOWNLOAD_LOCATION, output=PARQUET_FILTERED_LOCATION) {
+drop_cols_datasets <- function(dataset, columns=c(), input = AWS_PARQUET_DOWNLOAD_LOCATION, output=PARQUET_FILTERED_LOCATION, partitions = NULL) {
   if (dataset %in% list.dirs(input, full.names = F)) {
     input_path <- paste0(input, '/', dataset)
     final_path <- paste0(output, '/', dataset, '/')
@@ -50,7 +49,7 @@ drop_cols_datasets <- function(dataset, columns=c(), input = AWS_PARQUET_DOWNLOA
       dplyr::select(!columns) %>% 
       arrow::write_dataset(path = final_path, 
                            max_rows_per_file = 100000,
-                           partitioning = c('cohort'), 
+                           partitioning = partitions, 
                            existing_data_behavior = 'delete_matching')
   }
 }
