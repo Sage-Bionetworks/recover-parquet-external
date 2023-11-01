@@ -3,10 +3,10 @@ default:
 
 prod:
   PARQUET_BUCKET: recover-processed-data # S3 bucket containing the post-ETL parquet datasets
-  PARQUET_BUCKET_BASE_KEY: main/parquet
+  PARQUET_BUCKET_BASE_KEY: main/parquet/
   PARQUET_BUCKET_EXTERNAL: recover-main-project
-  PARQUET_BUCKET_BASE_KEY_ARCHIVE: main/archive
-  PARQUET_BUCKET_BASE_KEY_EXTERNAL: main/parquet
+  PARQUET_BUCKET_BASE_KEY_ARCHIVE: main/archive/
+  PARQUET_BUCKET_BASE_KEY_EXTERNAL: main/parquet/
   PARQUET_FOLDER_INTERNAL: syn51406699 # Local location where parquet bucket files are synced to
   AWS_PARQUET_DOWNLOAD_LOCATION: ./temp_aws_parquet
   AWS_ARCHIVE_DOWNLOAD_LOCATION: ./temp_aws_archive
