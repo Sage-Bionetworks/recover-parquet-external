@@ -56,7 +56,10 @@ drop_cols_datasets <- function(dataset, columns=c(), input = AWS_PARQUET_DOWNLOA
 
 
 # Filtering ---------------------------------------------------------------
-dob2age("dataset_enrolledparticipants", "DateOfBirth")
+dob2age(dataset = "dataset_enrolledparticipants", 
+        column = "DateOfBirth", 
+        input = AWS_PARQUET_DOWNLOAD_LOCATION, 
+        partitions = "cohort")
 
 unlink(PARQUET_FILTERED_LOCATION, recursive = T, force = T)
 
@@ -67,7 +70,11 @@ pii_to_drop <- synGet('syn52523394')$path %>% read.csv()
 tmp <- 
   lapply(seq_len(nrow(pii_to_drop)), function(i) {
     cat(i, "Dropping", pii_to_drop$column_to_be_dropped[[i]], "from", pii_to_drop$dataset[[i]], "\n")
-    drop_cols_datasets(dataset = pii_to_drop$dataset[[i]], columns = pii_to_drop$column_to_be_dropped[[i]])
+    drop_cols_datasets(dataset = pii_to_drop$dataset[[i]], 
+                       columns = pii_to_drop$column_to_be_dropped[[i]], 
+                       input = AWS_PARQUET_DOWNLOAD_LOCATION, 
+                       output = PARQUET_FILTERED_LOCATION, 
+                       partitions = "cohort")
     })
 
 rm(pii_to_drop)
