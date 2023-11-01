@@ -91,7 +91,7 @@ replace_equal_with_underscore <- function(directory_path) {
 
 # Setup -------------------------------------------------------------------
 synapser::synLogin(authToken = Sys.getenv('SYNAPSE_AUTH_TOKEN'))
-source('~/recover-parquet-external/params.R')
+config::get(config = "prod") %>% list2env(envir = .GlobalEnv)
 
 
 # Get STS credentials for input data bucket -------------------------------
