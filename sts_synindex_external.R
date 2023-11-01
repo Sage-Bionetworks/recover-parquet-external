@@ -170,14 +170,14 @@ system(manifest_cmd)
 
 # Index files in Synapse --------------------------------------------------
 # Get a list of all files to upload and their synapse locations (parentId)
-STR_LEN_PARQUET_FINAL_LOCATION <- stringr::str_length(PARQUET_FINAL_LOCATION)
+STR_LEN_PARQUET_FINAL_LOCATION <- stringr::str_length(AWS_ARCHIVE_DOWNLOAD_LOCATION)
 
 ## List all local files present (from manifest)
 synapse_manifest <- 
   read.csv('./current_manifest.tsv', sep = '\t', stringsAsFactors = F) %>%
   dplyr::filter(!grepl('owner.txt', path)) %>%
   dplyr::rowwise() %>%
-  dplyr::mutate(file_key = stringr::str_sub(string = path, start = STR_LEN_PARQUET_FINAL_LOCATION)) %>%
+  dplyr::mutate(file_key = stringr::str_sub(string = path, start = STR_LEN_PARQUET_FINAL_LOCATION+2)) %>%
   dplyr::mutate(s3_file_key = paste0(PARQUET_BUCKET_BASE_KEY_ARCHIVE, file_key)) %>%
   dplyr::mutate(md5_hash = as.character(tools::md5sum(path))) %>%
   dplyr::ungroup()
@@ -232,8 +232,8 @@ if(nrow(synapse_manifest_to_upload) > 0){
               name = new_fileName)
     
     f <- synStore(f, 
-                  activity = "Indexing", 
-                  activityDescription = "Indexing external parquet datasets", 
+                  activityName = "Indexing", 
+                  activityDescription = "Indexing external parquet datasets",
                   used = PARQUET_FOLDER_INTERNAL, 
                   executed = latest_commit_tree_url)
     
