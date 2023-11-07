@@ -46,7 +46,7 @@ drop_cols_datasets <- function(dataset, columns=c(), input = AWS_PARQUET_DOWNLOA
     final_path <- paste0(output, '/', dataset, '/')
     
     arrow::open_dataset(sources = input_path) %>% 
-      dplyr::select(!columns) %>% 
+      dplyr::select(!dplyr::any_of(columns)) %>% 
       arrow::write_dataset(path = final_path, 
                            max_rows_per_file = 100000,
                            partitioning = partitions, 
@@ -67,14 +67,18 @@ synLogin()
 
 pii_to_drop <- synGet('syn52523394')$path %>% read.csv()
 
+datasets_to_filter <- pii_to_drop$dataset %>% unique()
+cols_to_drop <- lapply(datasets_to_filter, function(x) {
+  pii_to_drop$column_to_be_dropped[which(pii_to_drop$dataset==x)]
+  })
+
 tmp <- 
-  lapply(seq_len(nrow(pii_to_drop)), function(i) {
-    cat(i, "Dropping", pii_to_drop$column_to_be_dropped[[i]], "from", pii_to_drop$dataset[[i]], "\n")
-    drop_cols_datasets(dataset = pii_to_drop$dataset[[i]], 
-                       columns = pii_to_drop$column_to_be_dropped[[i]], 
+  lapply(seq_len(nrow(datasets_to_filter)), function(i) {
+    cat(i, "Dropping", cols_to_drop[[i]], "from", datasets_to_filter[[i]], "\n")
+    drop_cols_datasets(dataset = datasets_to_filter[[i]], 
+                       columns = cols_to_drop[[i]], 
                        input = AWS_PARQUET_DOWNLOAD_LOCATION, 
                        output = PARQUET_FILTERED_LOCATION, 
                        partitions = "cohort")
     })
 
-rm(pii_to_drop)
