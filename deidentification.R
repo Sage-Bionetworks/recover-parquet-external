@@ -10,6 +10,21 @@ unlink('./dictionaries/', recursive = T, force = T)
 # Get dictionaries --------------------------------------------------------
 system('synapse get -r syn52316269 --downloadLocation ./dictionaries/ --manifest suppress')
 
+junk <- lapply(list.files("./dictionaries/", full.names = T), function(f) {
+  lines <- readLines(f)
+  
+  modified_lines <- lapply(lines, function(line) {
+    if (!grepl("^\".*\",", line)) {
+      line <- gsub("^(.*),", '"\\1",', line)
+    }
+    return(line)
+  })
+  
+  modified_lines <- unlist(modified_lines)
+  
+  writeLines(modified_lines, f)
+})
+
 store_dicts <- function(files_dir) {
   dicts <- list()
 
@@ -102,7 +117,18 @@ for (i in seq_along(deidentified_results$values_to_review)) {
   }
 }
 
+# Index each file in Synapse
+# latest_commit <- gh::gh("/repos/:owner/:repo/commits/main", owner = "Sage-Bionetworks", repo = "recover-parquet-external")
+# latest_commit_tree_url <- latest_commit$html_url %>% stringr::str_replace("commit", "tree")
+
 for (i in seq_along(list.files('./dictionaries/new_to_review/'))) {
-  synStore(File(path = paste0('./dictionaries/new_to_review/', list.files('./dictionaries/new_to_review/')[i]), 
-                parent = 'syn52409518'))
+  synStore(File(path = list.files('./dictionaries/new_to_review/', full.names = T)[i], 
+                parent = DEID_VALS_TO_REVIEW),
+          activityName = "Indexing",
+          activityDescription = "Indexing files containing PII values to review",
+          used = c((synGetChildren('syn52316269') %>% as.list())[[i]]$id, 
+                   synFindEntityId(names(deidentified_results$deidentified_datasets)[i], 
+                                   parent = PARQUET_FOLDER_INTERNAL))
+           # executed = latest_commit_tree_url
+           )
 }

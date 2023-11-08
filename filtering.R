@@ -66,7 +66,7 @@ unlink(PARQUET_FILTERED_LOCATION, recursive = T, force = T)
 
 synLogin()
 
-pii_to_drop <- synGet('syn52523394')$path %>% read.csv()
+pii_to_drop <- synGet(PII_COLS_TO_DROP)$path %>% read.csv()
 
 datasets_to_filter <- pii_to_drop$dataset %>% unique()
 cols_to_drop <- lapply(datasets_to_filter, function(x) {
@@ -74,7 +74,7 @@ cols_to_drop <- lapply(datasets_to_filter, function(x) {
   })
 
 tmp <- 
-  lapply(seq_len(nrow(datasets_to_filter)), function(i) {
+  lapply(seq_along(datasets_to_filter), function(i) {
     cat(i, "Dropping", cols_to_drop[[i]], "from", datasets_to_filter[[i]], "\n")
     drop_cols_datasets(dataset = datasets_to_filter[[i]], 
                        columns = cols_to_drop[[i]], 

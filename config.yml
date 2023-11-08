@@ -2,17 +2,29 @@ default:
   default_key: "default_value"
 
 prod:
-  PARQUET_BUCKET: recover-processed-data # S3 bucket containing the post-ETL parquet datasets
+  # S3 bucket containing the post-ETL parquet datasets
+  PARQUET_BUCKET: recover-processed-data
   PARQUET_BUCKET_BASE_KEY: main/parquet/
   PARQUET_BUCKET_EXTERNAL: recover-main-project
   PARQUET_BUCKET_BASE_KEY_ARCHIVE: main/archive/
   PARQUET_BUCKET_BASE_KEY_EXTERNAL: main/parquet/
-  PARQUET_FOLDER_INTERNAL: syn51406699 # Local location where parquet bucket files are synced to
+  PARQUET_FOLDER_INTERNAL: syn51406699
+  # Local locations where parquet bucket files are synced to
   AWS_PARQUET_DOWNLOAD_LOCATION: ./temp_aws_parquet
   AWS_ARCHIVE_DOWNLOAD_LOCATION: ./temp_aws_archive
   PARQUET_FILTERED_LOCATION: ./parquet_filtered
-  PARQUET_FINAL_LOCATION: ./parquet_final # Synapse locations where the S3 bucket objects are to be indexed
+  PARQUET_FINAL_LOCATION: ./parquet_final
+  # Synapse locations where the S3 bucket objects are to be indexed
   PARQUET_FOLDER_CURRENT: syn52506068
-  PARQUET_FOLDER_ARCHIVE: syn52506069 # synID of the file view containing a list of all currently indexed S3 objects from the parquet bucket folder in Synapse
+  PARQUET_FOLDER_ARCHIVE: syn52506069
+  # Synapse file view listing all S3 objects from the parquet bucket folder currently indexed in Synapse
   SYNAPSE_FILEVIEW_ID: syn52504776
+  PII_COLS_TO_DROP: syn52523394
+  DEID_VALS_TO_REVIEW: syn52409518
 
+staging:
+  inherits: prod
+  PARQUET_BUCKET_BASE_KEY_ARCHIVE: staging/
+  AWS_ARCHIVE_DOWNLOAD_LOCATION: ./temp_aws_staging
+  PARQUET_FOLDER_ARCHIVE: syn52912560
+  SYNAPSE_FILEVIEW_ID: syn52912727

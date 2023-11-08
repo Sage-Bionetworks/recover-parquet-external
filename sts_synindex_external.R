@@ -91,7 +91,8 @@ replace_equal_with_underscore <- function(directory_path) {
 
 # Setup -------------------------------------------------------------------
 synapser::synLogin(authToken = Sys.getenv('SYNAPSE_AUTH_TOKEN'))
-config::get(config = "prod") %>% list2env(envir = .GlobalEnv)
+config::get(config = "staging") %>% list2env(envir = .GlobalEnv)
+# config::get(config = "prod") %>% list2env(envir = .GlobalEnv)
 
 
 # Get STS credentials for input data bucket -------------------------------
