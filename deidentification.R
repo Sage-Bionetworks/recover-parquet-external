@@ -126,7 +126,9 @@ for (i in seq_along(list.files('./dictionaries/new_to_review/'))) {
                 parent = DEID_VALS_TO_REVIEW),
           activityName = "Indexing",
           activityDescription = "Indexing files containing PII values to review",
-          used = (synGetChildren('syn52316269') %>% as.list())[[1]]$id,
+          used = c((synGetChildren('syn52316269') %>% as.list())[[1]]$id, 
+                   synFindEntityId(names(deidentified_results$deidentified_datasets)[i], 
+                                   parent = PARQUET_FOLDER_INTERNAL)),
            # executed = latest_commit_tree_url
            )
 }
