@@ -104,5 +104,5 @@ for (i in seq_along(deidentified_results$values_to_review)) {
 
 for (i in seq_along(list.files('./dictionaries/new_to_review/'))) {
   synStore(File(path = paste0('./dictionaries/new_to_review/', list.files('./dictionaries/new_to_review/')[i]), 
-                parent = 'syn52409518'))
+                parent = DEID_VALS_TO_REVIEW))
 }
