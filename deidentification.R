@@ -10,6 +10,21 @@ unlink('./dictionaries/', recursive = T, force = T)
 # Get dictionaries --------------------------------------------------------
 system('synapse get -r syn52316269 --downloadLocation ./dictionaries/ --manifest suppress')
 
+junk <- lapply(list.files("./dictionaries/", full.names = T), function(f) {
+  lines <- readLines(f)
+  
+  modified_lines <- lapply(lines, function(line) {
+    if (!grepl("^\".*\",", line)) {
+      line <- gsub("^(.*),", '"\\1",', line)
+    }
+    return(line)
+  })
+  
+  modified_lines <- unlist(modified_lines)
+  
+  writeLines(modified_lines, f)
+})
+
 store_dicts <- function(files_dir) {
   dicts <- list()
 
