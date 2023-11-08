@@ -50,7 +50,8 @@ drop_cols_datasets <- function(dataset, columns=c(), input = AWS_PARQUET_DOWNLOA
       arrow::write_dataset(path = final_path, 
                            max_rows_per_file = 100000,
                            partitioning = partitions, 
-                           existing_data_behavior = 'delete_matching')
+                           existing_data_behavior = 'delete_matching',
+                           basename_template = paste0("part-0000{i}.", as.character("parquet")))
   }
 }
 
