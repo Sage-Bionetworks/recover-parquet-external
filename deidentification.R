@@ -117,7 +117,16 @@ for (i in seq_along(deidentified_results$values_to_review)) {
   }
 }
 
+# Index each file in Synapse
+# latest_commit <- gh::gh("/repos/:owner/:repo/commits/main", owner = "Sage-Bionetworks", repo = "recover-parquet-external")
+# latest_commit_tree_url <- latest_commit$html_url %>% stringr::str_replace("commit", "tree")
+
 for (i in seq_along(list.files('./dictionaries/new_to_review/'))) {
-  synStore(File(path = paste0('./dictionaries/new_to_review/', list.files('./dictionaries/new_to_review/')[i]), 
-                parent = DEID_VALS_TO_REVIEW))
+  synStore(File(path = list.files('./dictionaries/new_to_review/', full.names = T)[i], 
+                parent = DEID_VALS_TO_REVIEW),
+          activityName = "Indexing",
+          activityDescription = "Indexing files containing PII values to review",
+          used = (synGetChildren('syn52316269') %>% as.list())[[1]]$id,
+           # executed = latest_commit_tree_url
+           )
 }
