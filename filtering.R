@@ -74,7 +74,7 @@ cols_to_drop <- lapply(datasets_to_filter, function(x) {
   })
 
 tmp <- 
-  lapply(seq_len(nrow(datasets_to_filter)), function(i) {
+  lapply(seq_along(datasets_to_filter), function(i) {
     cat(i, "Dropping", cols_to_drop[[i]], "from", datasets_to_filter[[i]], "\n")
     drop_cols_datasets(dataset = datasets_to_filter[[i]], 
                        columns = cols_to_drop[[i]], 
