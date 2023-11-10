@@ -21,11 +21,16 @@ base_s3_uri_archive <-
 validated_date <- readline("Enter name of validated staging folder in yyyy-mm-dd format: ")
 
 if (!is.null(synFindEntityId(validated_date, config::get("PARQUET_FOLDER_ARCHIVE", "staging")))) {
-  cmd <- glue::glue("aws s3 --profile service-catalog cp {base_s3_uri_staging}{validated_date} {base_s3_uri_archive} --exclude '*owner.txt*' --exclude '*archive*'")
-  rm(validated_date)
+  sync_cmd <- glue::glue("aws s3 --profile service-catalog sync {base_s3_uri_staging}{validated_date}/ {STAGING_TO_ARCHIVE_DOWNLOAD_LOCATION} --exclude '*owner.txt*' --exclude '*archive*'")
+  system(sync_cmd)
+  rm(sync_cmd)
+  sync_cmd <- glue::glue("aws s3 --profile service-catalog sync {STAGING_TO_ARCHIVE_DOWNLOAD_LOCATION} {base_s3_uri_archive}{validated_date}/ --exclude '*owner.txt*' --exclude '*archive*'")
+  system(sync_cmd)
+  
+  rm(sync_cmd, validated_date)
   
   # Sync entire bucket to local
-  unlink(AWS_PARQUET_DOWNLOAD_LOCATION, recursive = T, force = T)
+  unlink(STAGING_TO_ARCHIVE_DOWNLOAD_LOCATION, recursive = T, force = T)
   unlink(AWS_ARCHIVE_DOWNLOAD_LOCATION, recursive = T, force = T)
   sync_cmd <- glue::glue('aws s3 --profile service-catalog sync {base_s3_uri_archive} {AWS_ARCHIVE_DOWNLOAD_LOCATION} --exclude "*owner.txt*" --exclude "*archive*"')
   system(sync_cmd)
