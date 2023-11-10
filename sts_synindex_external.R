@@ -92,7 +92,6 @@ replace_equal_with_underscore <- function(directory_path) {
 # Setup -------------------------------------------------------------------
 synapser::synLogin(authToken = Sys.getenv('SYNAPSE_AUTH_TOKEN'))
 config::get(config = "staging") %>% list2env(envir = .GlobalEnv)
-# config::get(config = "prod") %>% list2env(envir = .GlobalEnv)
 
 
 # Get STS credentials for input data bucket -------------------------------
@@ -145,16 +144,6 @@ source('~/recover-parquet-external/deidentification.R')
 date <- lubridate::today()
 sync_cmd <- glue::glue('aws s3 --profile service-catalog sync {PARQUET_FINAL_LOCATION} {base_s3_uri_archive}{date}/ --exclude "*owner.txt*" --exclude "*archive*"')
 system(sync_cmd)
-
-
-# Recreate directory tree of parquet datasets bucket location in S --------
-# existing_dirs <- synGetChildren(PARQUET_FOLDER_ARCHIVE) %>% as.list()
-# 
-# if(length(existing_dirs)>0) {
-#   for (i in seq_along(existing_dirs)) {
-#     synDelete(existing_dirs[[i]]$id)
-#   }
-# }
 
 # Sync entire bucket to local
 unlink(AWS_PARQUET_DOWNLOAD_LOCATION, recursive = T, force = T)
