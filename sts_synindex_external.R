@@ -156,7 +156,8 @@ system(sync_cmd)
 #   }
 # }
 
-# Generate manifest of existing files
+# Sync entire bucket to local
+unlink(AWS_PARQUET_DOWNLOAD_LOCATION, recursive = T, force = T)
 unlink(AWS_ARCHIVE_DOWNLOAD_LOCATION, recursive = T, force = T)
 sync_cmd <- glue::glue('aws s3 --profile service-catalog sync {base_s3_uri_archive} {AWS_ARCHIVE_DOWNLOAD_LOCATION} --exclude "*owner.txt*" --exclude "*archive*"')
 system(sync_cmd)
@@ -164,6 +165,7 @@ system(sync_cmd)
 # Modify cohort identifier in dir name
 junk <- sapply(list.dirs(AWS_ARCHIVE_DOWNLOAD_LOCATION), replace_equal_with_underscore)
 
+# Generate manifest of existing files
 SYNAPSE_AUTH_TOKEN <- Sys.getenv('SYNAPSE_AUTH_TOKEN')
 manifest_cmd <- glue::glue('SYNAPSE_AUTH_TOKEN="{SYNAPSE_AUTH_TOKEN}" synapse manifest --parent-id {PARQUET_FOLDER_ARCHIVE} --manifest ./current_manifest.tsv {AWS_ARCHIVE_DOWNLOAD_LOCATION}')
 system(manifest_cmd)
@@ -181,7 +183,10 @@ synapse_manifest <-
   dplyr::mutate(file_key = stringr::str_sub(string = path, start = STR_LEN_PARQUET_FINAL_LOCATION+2)) %>%
   dplyr::mutate(s3_file_key = paste0(PARQUET_BUCKET_BASE_KEY_ARCHIVE, file_key)) %>%
   dplyr::mutate(md5_hash = as.character(tools::md5sum(path))) %>%
-  dplyr::ungroup()
+  dplyr::ungroup() %>% 
+  dplyr::mutate(file_key = gsub("cohort_", "cohort=", file_key),
+                s3_file_key = gsub("cohort_", "cohort=", s3_file_key))
+
 
 # List all files currently indexed in Synapse
 synapse_fileview <- 
@@ -203,11 +208,6 @@ if (nrow(synapse_fileview)>0) {
 } else {
   synapse_manifest_to_upload <- synapse_manifest
 }
-
-synapse_manifest_to_upload <-
-  synapse_manifest_to_upload %>%
-  mutate(file_key = gsub("cohort_", "cohort=", file_key),
-         s3_file_key = gsub("cohort_", "cohort=", s3_file_key))
 
 # Index each file in Synapse
 latest_commit <- gh::gh("/repos/:owner/:repo/commits/main", owner = "Sage-Bionetworks", repo = "recover-parquet-external")
