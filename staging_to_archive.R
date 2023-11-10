@@ -1,6 +1,24 @@
 library(synapser)
 library(tidyverse)
 
+#' Replace equal sign with underscore
+#'
+#' This function renames a directory path by replacing equal signs with underscores.
+#' If a replacement is performed, it logs the change.
+#'
+#' @param directory_path The path of the directory to rename.
+#'
+#' @examples
+#' replace_equal_with_underscore("path_with=equals")
+#' 
+replace_equal_with_underscore <- function(directory_path) {
+  new_directory_path <- gsub("=", "_", directory_path)
+  if (directory_path != new_directory_path) {
+    file.rename(directory_path, new_directory_path)
+    return(cat("Renamed:", directory_path, "to", new_directory_path, "\n"))
+  }
+}
+
 synapser::synLogin(authToken = Sys.getenv('SYNAPSE_AUTH_TOKEN'))
 
 base_s3_uri_staging <- 
@@ -20,6 +38,7 @@ base_s3_uri_archive <-
 
 validated_date <- readline("Enter name of validated staging folder in yyyy-mm-dd format: ")
 
+# Index files in Synapse --------------------------------------------------
 if (!is.null(synFindEntityId(validated_date, config::get("PARQUET_FOLDER_ARCHIVE", "staging")))) {
   sync_cmd <- glue::glue("aws s3 --profile service-catalog sync {base_s3_uri_staging}{validated_date}/ {STAGING_TO_ARCHIVE_DOWNLOAD_LOCATION} --exclude '*owner.txt*' --exclude '*archive*'")
   system(sync_cmd)
@@ -43,8 +62,6 @@ if (!is.null(synFindEntityId(validated_date, config::get("PARQUET_FOLDER_ARCHIVE
   manifest_cmd <- glue::glue('SYNAPSE_AUTH_TOKEN="{SYNAPSE_AUTH_TOKEN}" synapse manifest --parent-id {PARQUET_FOLDER_ARCHIVE} --manifest ./current_manifest.tsv {AWS_ARCHIVE_DOWNLOAD_LOCATION}')
   system(manifest_cmd)
   
-  
-  # Index files in Synapse --------------------------------------------------
   # Get a list of all files to upload and their synapse locations (parentId)
   STR_LEN_PARQUET_FINAL_LOCATION <- stringr::str_length(AWS_ARCHIVE_DOWNLOAD_LOCATION)
   
