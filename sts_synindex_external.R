@@ -156,7 +156,8 @@ system(sync_cmd)
 #   }
 # }
 
-# Generate manifest of existing files
+# Sync entire bucket to local
+unlink(AWS_PARQUET_DOWNLOAD_LOCATION, recursive = T, force = T)
 unlink(AWS_ARCHIVE_DOWNLOAD_LOCATION, recursive = T, force = T)
 sync_cmd <- glue::glue('aws s3 --profile service-catalog sync {base_s3_uri_archive} {AWS_ARCHIVE_DOWNLOAD_LOCATION} --exclude "*owner.txt*" --exclude "*archive*"')
 system(sync_cmd)
@@ -164,6 +165,7 @@ system(sync_cmd)
 # Modify cohort identifier in dir name
 junk <- sapply(list.dirs(AWS_ARCHIVE_DOWNLOAD_LOCATION), replace_equal_with_underscore)
 
+# Generate manifest of existing files
 SYNAPSE_AUTH_TOKEN <- Sys.getenv('SYNAPSE_AUTH_TOKEN')
 manifest_cmd <- glue::glue('SYNAPSE_AUTH_TOKEN="{SYNAPSE_AUTH_TOKEN}" synapse manifest --parent-id {PARQUET_FOLDER_ARCHIVE} --manifest ./current_manifest.tsv {AWS_ARCHIVE_DOWNLOAD_LOCATION}')
 system(manifest_cmd)
