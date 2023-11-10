@@ -183,7 +183,10 @@ synapse_manifest <-
   dplyr::mutate(file_key = stringr::str_sub(string = path, start = STR_LEN_PARQUET_FINAL_LOCATION+2)) %>%
   dplyr::mutate(s3_file_key = paste0(PARQUET_BUCKET_BASE_KEY_ARCHIVE, file_key)) %>%
   dplyr::mutate(md5_hash = as.character(tools::md5sum(path))) %>%
-  dplyr::ungroup()
+  dplyr::ungroup() %>% 
+  dplyr::mutate(file_key = gsub("cohort_", "cohort=", file_key),
+                s3_file_key = gsub("cohort_", "cohort=", s3_file_key))
+
 
 # List all files currently indexed in Synapse
 synapse_fileview <- 
@@ -205,11 +208,6 @@ if (nrow(synapse_fileview)>0) {
 } else {
   synapse_manifest_to_upload <- synapse_manifest
 }
-
-synapse_manifest_to_upload <-
-  synapse_manifest_to_upload %>%
-  mutate(file_key = gsub("cohort_", "cohort=", file_key),
-         s3_file_key = gsub("cohort_", "cohort=", s3_file_key))
 
 # Index each file in Synapse
 latest_commit <- gh::gh("/repos/:owner/:repo/commits/main", owner = "Sage-Bionetworks", repo = "recover-parquet-external")
