@@ -83,3 +83,25 @@ tmp <-
                        partitions = "cohort")
     })
 
+# TODO: Replace tested code below with real variables and pointers once pilot data is available
+# participants_to_withdraw <- tmpf$ParticipantIdentifier[wdp$EOPRemoveData==1]
+participants_to_withdraw <- c("RA11101-00754", "RA11303-00148", "RA12301-00099")
+
+lapply(list.dirs("./test_dir", recursive = F), function(x) {
+  d <- 
+    arrow::open_dataset(x) %>% 
+    filter(!ParticipantIdentifier %in% participants_to_withdraw) %>% 
+    arrow::write_dataset(path = gsub("./test_dir/", "./test_dir_new/", x), 
+                         max_rows_per_file = 100000,
+                         partitioning = "cohort", 
+                         existing_data_behavior = 'delete_matching',
+                         basename_template = paste0("part-0000{i}.", as.character("parquet")))
+})
+
+lapply(list.dirs("test_dir", recursive = F), function(x) {
+  grepl("RA12301-00099", (open_dataset(x) %>% select(ParticipantIdentifier) %>% collect() %>% as.list()))
+})
+
+lapply(list.dirs("test_dir_new", recursive = F), function(x) {
+  grepl("RA12301-00099", (open_dataset(x) %>% select(ParticipantIdentifier) %>% collect() %>% as.list()))
+})
