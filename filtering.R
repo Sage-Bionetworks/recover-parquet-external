@@ -83,15 +83,18 @@ tmp <-
                        partitions = "cohort")
     })
 
-# TODO: Replace tested code below with real variables and pointers once pilot data is available
-# participants_to_withdraw <- tmpf$ParticipantIdentifier[wdp$EOPRemoveData==1]
-participants_to_withdraw <- c("RA11101-00754", "RA11303-00148", "RA12301-00099")
+participants_to_withdraw <- 
+  arrow::open_dataset(paste0(PARQUET_FILTERED_LOCATION, "/dataset_enrolledparticipants/")) %>% 
+  dplyr::select(ParticipantIdentifier, CustomFields_EOPRemoveData) %>% 
+  dplyr::filter(CustomFields_EOPRemoveData==1) %>%
+  dplyr::pull(ParticipantIdentifier, as_vector = TRUE) %>% 
+  unique()
 
-lapply(list.dirs("./test_dir", recursive = F), function(x) {
+lapply(list.dirs(PARQUET_FILTERED_LOCATION, recursive = F), function(x) {
   d <- 
     arrow::open_dataset(x) %>% 
     filter(!ParticipantIdentifier %in% participants_to_withdraw) %>% 
-    arrow::write_dataset(path = gsub("./test_dir/", "./test_dir_new/", x), 
+    arrow::write_dataset(path = x, 
                          max_rows_per_file = 100000,
                          partitioning = "cohort", 
                          existing_data_behavior = 'delete_matching',
