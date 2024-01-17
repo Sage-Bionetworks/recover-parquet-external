@@ -122,6 +122,10 @@ sync_cmd <- glue::glue('aws s3 sync {base_s3_uri} {AWS_PARQUET_DOWNLOAD_LOCATION
 system(sync_cmd)
 
 
+# Remove withdrawn participants -------------------------------------------
+source("~/recover-parquet-external/remove_withdrawn_participants.R")
+
+
 # Filter parquet datasets -------------------------------------------------
 source('~/recover-parquet-external/filtering.R')
 
