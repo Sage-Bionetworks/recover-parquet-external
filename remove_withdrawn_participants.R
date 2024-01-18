@@ -1,3 +1,23 @@
+# Datasets that contain ParticipantIdentifier column
+contains_pid <- 
+  sapply(list.dirs(AWS_PARQUET_DOWNLOAD_LOCATION, recursive = F), function(x) {
+    grepl("ParticipantIdentifier", open_dataset(x)$metadata$org.apache.spark.sql.parquet.row.metadata)
+  }) %>% 
+  tibble::enframe()
+
+contains_pid_false <- contains_pid$name[which(contains_pid$value==FALSE)]
+
+sapply(contains_pid_false, function(x) {
+  open_dataset(x)
+})
+
+# fitbit_sleeplogs -> fitbit_sleeplogdetails: match on LogId
+# symptomlog -> symptomlog_value_symptoms, symptomlog_value_treatments: match on DataPointKey
+# healthkitv2electrocardiogram -> healthkitv2electrocardiogram_subsamples: match on HealthKitECGSampleKey
+# healthkitv2heartbeat -> healthkitv2heartbeat_subsamples: match on HealthKitHeartbeatSampleKey
+# healthkitv2workouts -> healthkitv2workouts_events: match on HealthKitWorkoutKey
+
+
 participants_to_withdraw <- 
   arrow::open_dataset(paste0(AWS_PARQUET_DOWNLOAD_LOCATION, "/dataset_enrolledparticipants/")) %>% 
   dplyr::select(ParticipantIdentifier, CustomFields_EOPRemoveData) %>% 
