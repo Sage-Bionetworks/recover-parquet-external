@@ -26,14 +26,18 @@ participants_to_withdraw <-
   unique()
 
 lapply(list.dirs(AWS_PARQUET_DOWNLOAD_LOCATION, recursive = F), function(x) {
-  d <- 
-    arrow::open_dataset(x) %>% 
-    filter(!ParticipantIdentifier %in% participants_to_withdraw) %>% 
-    arrow::write_dataset(path = x, 
-                         max_rows_per_file = 100000,
-                         partitioning = "cohort", 
-                         existing_data_behavior = 'delete_matching',
-                         basename_template = paste0("part-0000{i}.", as.character("parquet")))
+  if (x %in% contains_pid_false) {
+    # use mapping above to filter out data
+  } else {
+    d <-
+      arrow::open_dataset(x) %>%
+      filter(!ParticipantIdentifier %in% participants_to_withdraw) %>%
+      arrow::write_dataset(path = x,
+                           max_rows_per_file = 100000,
+                           partitioning = "cohort",
+                           existing_data_behavior = 'delete_matching',
+                           basename_template = paste0("part-0000{i}.", as.character("parquet")))
+  }
 })
 
 # lapply(list.dirs("test_dir", recursive = F), function(x) {
