@@ -47,12 +47,6 @@ contains_pid_false <-
   dplyr::filter(value==FALSE) %>% 
   dplyr::pull(name)
 
-# fitbitsleeplogs -> fitbitsleeplogs_sleeplogdetails: match on LogId
-# symptomlog -> symptomlog_value_symptoms, symptomlog_value_treatments: match on DataPointKey
-# healthkitv2electrocardiogram -> healthkitv2electrocardiogram_subsamples: match on HealthKitECGSampleKey
-# healthkitv2heartbeat -> healthkitv2heartbeat_subsamples: match on HealthKitHeartbeatSampleKey
-# healthkitv2workouts -> healthkitv2workouts_events: match on HealthKitWorkoutKey
-
 fitbitsleeplogs_sleeplogdetails_to_withdraw <-
   get_mappingID_vals_to_withdraw("dataset_fitbitsleeplogs", "LogId")
 
