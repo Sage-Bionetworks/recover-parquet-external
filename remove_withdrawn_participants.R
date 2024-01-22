@@ -45,8 +45,18 @@ contains_pid_false <-
   }) %>% 
   tibble::enframe() %>% 
   dplyr::filter(value==FALSE) %>% 
-  dplyr::pull(name)
+  dplyr::select(name)
 
+contains_pid_false$mappingID <- 
+  dplyr::case_when(
+    grepl("fitbitsleeplogs", contains_pid_false$name) == TRUE ~ "LogId",
+    grepl("healthkitv2electrocardiogram", contains_pid_false$name) == TRUE ~ "HealthKitECGSampleKey",
+    grepl("healthkitv2heartbeat", contains_pid_false$name) == TRUE ~ "HealthKitHeartbeatSampleKey",
+    grepl("healthkitv2workout", contains_pid_false$name) == TRUE ~ "HealthKitWorkoutKey",
+    grepl("symptomlog_value", contains_pid_false$name) == TRUE ~ "DataPointKey",
+  )
+
+# Get values of mapping IDs for participants to withdraw
 fitbitsleeplogs_sleeplogdetails_to_withdraw <-
   get_mappingID_vals_to_withdraw("dataset_fitbitsleeplogs", "LogId")
 
@@ -66,7 +76,7 @@ healthkitv2workouts_events_to_withdraw <-
   get_mappingID_vals_to_withdraw("dataset_healthkitv2workouts", "HealthKitWorkoutKey")
 
 lapply(list.dirs(AWS_PARQUET_DOWNLOAD_LOCATION, recursive = F), function(x) {
-  if (x %in% contains_pid_false) {
+  if (x %in% contains_pid_false$name) {
     # use mapping above to filter out data
   } else {
     d <-
