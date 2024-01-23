@@ -24,9 +24,9 @@ get_mappingID_vals_to_withdraw <- function(dataset_name, mappingID_var) {
     dplyr::select(dplyr::all_of(c("ParticipantIdentifier", mappingID_var))) %>% 
     dplyr::filter(ParticipantIdentifier %in% participants_to_withdraw) %>% 
     dplyr::collect() %>% 
-    dplyr::pull(mappingID_var)
+    dplyr::pull(mappingID_var) %>% 
+    unique()
 }
-
 
 # Main --------------------------------------------------------------------
 
@@ -38,7 +38,7 @@ participants_to_withdraw <-
   dplyr::pull(ParticipantIdentifier) %>% 
   unique()
 
-# Datasets that do not contain ParticipantIdentifier column
+# Store list of datasets that do not contain ParticipantIdentifier column
 contains_pid_false <- 
   sapply(list.dirs(AWS_PARQUET_DOWNLOAD_LOCATION, recursive = F), function(x) {
     grepl("ParticipantIdentifier", open_dataset(x)$metadata$org.apache.spark.sql.parquet.row.metadata)
@@ -47,48 +47,69 @@ contains_pid_false <-
   dplyr::filter(value==FALSE) %>% 
   dplyr::select(name)
 
+# Store mapping ID var name for corresponding datasets
 contains_pid_false$mappingID <- 
   dplyr::case_when(
     grepl("fitbitsleeplogs", contains_pid_false$name) == TRUE ~ "LogId",
     grepl("healthkitv2electrocardiogram", contains_pid_false$name) == TRUE ~ "HealthKitECGSampleKey",
     grepl("healthkitv2heartbeat", contains_pid_false$name) == TRUE ~ "HealthKitHeartbeatSampleKey",
     grepl("healthkitv2workout", contains_pid_false$name) == TRUE ~ "HealthKitWorkoutKey",
-    grepl("symptomlog_value", contains_pid_false$name) == TRUE ~ "DataPointKey",
+    grepl("symptomlog_value", contains_pid_false$name) == TRUE ~ "DataPointKey"
   )
 
-# Get values of mapping IDs for participants to withdraw
-fitbitsleeplogs_sleeplogdetails_to_withdraw <-
-  get_mappingID_vals_to_withdraw("dataset_fitbitsleeplogs", "LogId")
-
-symptomlog_value_symptoms_to_withdraw <-
-  get_mappingID_vals_to_withdraw("dataset_symptomlog", "DataPointKey")
-
-symptomlog_value_treatments_to_withdraw <-
-  symptomlog_value_symptoms_to_withdraw
-
-healthkitv2electrocardiogram_subsamples_to_withdraw <-
-  get_mappingID_vals_to_withdraw("dataset_healthkitv2electrocardiogram", "HealthKitECGSampleKey")
-
-healthkitv2heartbeat_subsamples_to_withdraw <-
-  get_mappingID_vals_to_withdraw("dataset_healthkitv2heartbeat", "HealthKitHeartbeatSampleKey")
-
-healthkitv2workouts_events_to_withdraw <-
-  get_mappingID_vals_to_withdraw("dataset_healthkitv2workouts", "HealthKitWorkoutKey")
+# Get values of mapping ID vars for participants to withdraw
+contains_pid_false$participants_to_withdraw <- 
+  dplyr::case_when(
+    grepl("fitbitsleeplogs", contains_pid_false$name) == TRUE ~ list(get_mappingID_vals_to_withdraw("dataset_fitbitsleeplogs", "LogId")),
+    grepl("healthkitv2electrocardiogram", contains_pid_false$name) == TRUE ~ list(get_mappingID_vals_to_withdraw("dataset_healthkitv2electrocardiogram", "HealthKitECGSampleKey")),
+    grepl("healthkitv2heartbeat", contains_pid_false$name) == TRUE ~ list(get_mappingID_vals_to_withdraw("dataset_healthkitv2heartbeat", "HealthKitHeartbeatSampleKey")),
+    grepl("healthkitv2workout", contains_pid_false$name) == TRUE ~ list(get_mappingID_vals_to_withdraw("dataset_healthkitv2workouts", "HealthKitWorkoutKey")),
+    grepl("symptomlog_value", contains_pid_false$name) == TRUE ~ list(get_mappingID_vals_to_withdraw("dataset_symptomlog", "DataPointKey"))
+  )
 
 lapply(list.dirs(AWS_PARQUET_DOWNLOAD_LOCATION, recursive = F), function(x) {
   if (x %in% contains_pid_false$name) {
-    # use mapping above to filter out data
+    tmpret <- unlist(contains_pid_false$participants_to_withdraw[x == contains_pid_false$name])
+    d <- 
+      arrow::open_dataset(x) %>%
+      filter(!(!!(as.symbol(contains_pid_false$mappingID[x == contains_pid_false$name]))) %in% tmpret)
   } else {
     d <-
       arrow::open_dataset(x) %>%
-      filter(!ParticipantIdentifier %in% participants_to_withdraw) %>%
-      arrow::write_dataset(path = x,
-                           max_rows_per_file = 100000,
-                           partitioning = "cohort",
-                           existing_data_behavior = 'delete_matching',
-                           basename_template = paste0("part-0000{i}.", as.character("parquet")))
+      filter(!ParticipantIdentifier %in% participants_to_withdraw)
   }
+  d %>% 
+    arrow::write_dataset(
+      path = x,
+      max_rows_per_file = 100000,
+      partitioning = "cohort",
+      existing_data_behavior = 'delete_matching',
+      basename_template = paste0("part-0000{i}.", as.character("parquet"))
+    )
 })
+
+# lapply(list.dirs(AWS_PARQUET_DOWNLOAD_LOCATION, recursive = F), function(x) {
+#   if (x %in% contains_pid_false$name) {
+#     tmpret <- unlist(contains_pid_false$participants_to_withdraw[x == contains_pid_false$name])
+#     d <- 
+#       arrow::open_dataset(x) %>%
+#       filter(!(!!(as.symbol(contains_pid_false$mappingID[x == contains_pid_false$name]))) %in% tmpret) %>% 
+#       arrow::write_dataset(path = x,
+#                            max_rows_per_file = 100000,
+#                            partitioning = "cohort",
+#                            existing_data_behavior = 'delete_matching',
+#                            basename_template = paste0("part-0000{i}.", as.character("parquet")))
+#   } else {
+#     d <-
+#       arrow::open_dataset(x) %>%
+#       filter(!ParticipantIdentifier %in% participants_to_withdraw) %>%
+#       arrow::write_dataset(path = x,
+#                            max_rows_per_file = 100000,
+#                            partitioning = "cohort",
+#                            existing_data_behavior = 'delete_matching',
+#                            basename_template = paste0("part-0000{i}.", as.character("parquet")))
+#   }
+# })
 
 # lapply(list.dirs("test_dir", recursive = F), function(x) {
 #   grepl("RA12301-00099", (open_dataset(x) %>% select(ParticipantIdentifier) %>% collect() %>% as.list()))
