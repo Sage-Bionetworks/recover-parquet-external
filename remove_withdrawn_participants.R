@@ -6,7 +6,12 @@
 #' This function gets the values of an identifier variable in 
 #' datasets that do not contain the ParticipantIdentifier variable, but 
 #' only for the corresponding ParticipantIdentifer values that are found 
-#' in a list containing ParticipantIdentifier values of withdrawn participants.
+#' in a list containing ParticipantIdentifier values of withdrawn participants. 
+#' For example, if dataset A contains ParticipantIdentifier and DataKey columns, 
+#' and dataset B contains the DataKey column but not the ParticipantIdentifier 
+#' column, then we can map datasetB.DataKey to datasetA.ParticipantIdentifier 
+#' using datasetA.DataKey and datasetB.DataKey, filtering by values of 
+#' datasetA.ParticipantIdentifier that meet some criteria.
 #'
 #' @param dataset_name The name of a dataset that has the ParticipantIdentifier 
 #' variable and the mapping identifier variable (`mappingID_var`).
@@ -30,6 +35,7 @@ get_mappingID_vals_to_withdraw <- function(dataset_name, mappingID_var) {
 
 # Main --------------------------------------------------------------------
 
+# Get list of ParticipantIdentifiers of withdrawn participants
 participants_to_withdraw <- 
   arrow::open_dataset(paste0(AWS_PARQUET_DOWNLOAD_LOCATION, "/dataset_enrolledparticipants/")) %>% 
   dplyr::select(ParticipantIdentifier, CustomFields_EOPRemoveData) %>% 
@@ -67,6 +73,7 @@ contains_pid_false$participants_to_withdraw <-
     grepl("symptomlog_value", contains_pid_false$name) == TRUE ~ list(get_mappingID_vals_to_withdraw("dataset_symptomlog", "DataPointKey"))
   )
 
+# Remove data for withdrawn participants from parquet datasets based on mapping ID variables
 lapply(list.dirs(AWS_PARQUET_DOWNLOAD_LOCATION, recursive = F), function(x) {
   if (x %in% contains_pid_false$name) {
     tmpret <- unlist(contains_pid_false$participants_to_withdraw[x == contains_pid_false$name])
