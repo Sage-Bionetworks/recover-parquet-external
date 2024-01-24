@@ -94,34 +94,3 @@ lapply(list.dirs(AWS_PARQUET_DOWNLOAD_LOCATION, recursive = F), function(x) {
       basename_template = paste0("part-0000{i}.", as.character("parquet"))
     )
 })
-
-# lapply(list.dirs(AWS_PARQUET_DOWNLOAD_LOCATION, recursive = F), function(x) {
-#   if (x %in% contains_pid_false$name) {
-#     tmpret <- unlist(contains_pid_false$participants_to_withdraw[x == contains_pid_false$name])
-#     d <- 
-#       arrow::open_dataset(x) %>%
-#       filter(!(!!(as.symbol(contains_pid_false$mappingID[x == contains_pid_false$name]))) %in% tmpret) %>% 
-#       arrow::write_dataset(path = x,
-#                            max_rows_per_file = 100000,
-#                            partitioning = "cohort",
-#                            existing_data_behavior = 'delete_matching',
-#                            basename_template = paste0("part-0000{i}.", as.character("parquet")))
-#   } else {
-#     d <-
-#       arrow::open_dataset(x) %>%
-#       filter(!ParticipantIdentifier %in% participants_to_withdraw) %>%
-#       arrow::write_dataset(path = x,
-#                            max_rows_per_file = 100000,
-#                            partitioning = "cohort",
-#                            existing_data_behavior = 'delete_matching',
-#                            basename_template = paste0("part-0000{i}.", as.character("parquet")))
-#   }
-# })
-
-# lapply(list.dirs("test_dir", recursive = F), function(x) {
-#   grepl("RA12301-00099", (open_dataset(x) %>% select(ParticipantIdentifier) %>% collect() %>% as.list()))
-# })
-# 
-# lapply(list.dirs("test_dir_new", recursive = F), function(x) {
-#   grepl("RA12301-00099", (open_dataset(x) %>% select(ParticipantIdentifier) %>% collect() %>% as.list()))
-# })
