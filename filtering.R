@@ -82,4 +82,3 @@ tmp <-
                        output = PARQUET_FILTERED_LOCATION, 
                        partitions = "cohort")
     })
-
