@@ -39,7 +39,7 @@ get_mappingID_vals_to_withdraw <- function(dataset_name, mappingID_var) {
 participants_to_withdraw <- 
   arrow::open_dataset(paste0(AWS_PARQUET_DOWNLOAD_LOCATION, "/dataset_enrolledparticipants/")) %>% 
   dplyr::select(ParticipantIdentifier, CustomFields_EOPRemoveData) %>% 
-  dplyr::filter(CustomFields_EOPRemoveData==1) %>%
+  dplyr::filter(as.character(CustomFields_EOPRemoveData)=="1") %>%
   dplyr::collect() %>% 
   dplyr::pull(ParticipantIdentifier) %>% 
   unique()
