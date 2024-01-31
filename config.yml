@@ -22,6 +22,7 @@ prod:
   PII_COLS_TO_DROP: syn52523394
   DEID_VALS_TO_REVIEW: syn52409518
   STAGING_TO_ARCHIVE_DOWNLOAD_LOCATION: ./temp_staging_to_archive/
+  POST_WITHDRAW_LOCATION: ./temp_post_withdraw
 
 staging:
   inherits: prod
