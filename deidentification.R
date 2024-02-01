@@ -122,13 +122,13 @@ for (i in seq_along(deidentified_results$values_to_review)) {
 
 # Index each file in Synapse
 latest_commit <- gh::gh("/repos/:owner/:repo/commits/main", owner = "Sage-Bionetworks", repo = "recover-parquet-external")
-latest_commit_tree_url <- latest_commit$html_url %>% stringr::str_replace("commit", "tree")
+latest_commit_url <- latest_commit$files[[1]]$blob_url
 
 for (i in seq_along(list.files('./dictionaries/new_to_review/'))) {
-  synStore(File(path = list.files('./dictionaries/new_to_review/', full.names = T)[i], 
+  synStore(File(path = list.files('./dictionaries/new_to_review', full.names = T)[i], 
                 parent = DEID_VALS_TO_REVIEW),
           activityName = "Indexing",
-          activityDescription = "Indexing files containing PII values to review",
+          activityDescription = "Indexing files containing new PII values to review for deidentification step",
           used = c((synGetChildren('syn52316269') %>% as.list())[[i]]$id, 
                    synFindEntityId(names(deidentified_results$deidentified_datasets)[i], 
                                    parent = PARQUET_FOLDER_INTERNAL)),
