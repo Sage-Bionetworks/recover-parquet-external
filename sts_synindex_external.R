@@ -149,10 +149,10 @@ date <- lubridate::today()
 sync_cmd <- glue::glue('aws s3 --profile service-catalog sync {PARQUET_FINAL_LOCATION} {base_s3_uri_archive}{date}/ --exclude "*owner.txt*" --exclude "*archive*"')
 system(sync_cmd)
 
-# Sync entire bucket to local
+# Sync new date dir in staging bucket to local
 unlink(AWS_PARQUET_DOWNLOAD_LOCATION, recursive = T, force = T)
 unlink(AWS_ARCHIVE_DOWNLOAD_LOCATION, recursive = T, force = T)
-sync_cmd <- glue::glue('aws s3 --profile service-catalog sync {base_s3_uri_archive} {AWS_ARCHIVE_DOWNLOAD_LOCATION} --exclude "*owner.txt*" --exclude "*archive*"')
+sync_cmd <- glue::glue('aws s3 --profile service-catalog sync {base_s3_uri_archive}{date}/ {AWS_ARCHIVE_DOWNLOAD_LOCATION}/{date}/ --exclude "*owner.txt*" --exclude "*archive*"')
 system(sync_cmd)
 
 # Modify cohort identifier in dir name
