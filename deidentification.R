@@ -14,8 +14,10 @@ junk <- lapply(list.files("./dictionaries/", full.names = T), function(f) {
   lines <- readLines(f)
   
   modified_lines <- lapply(lines, function(line) {
-    if (!grepl("^\".*\",", line)) {
-      line <- gsub("^(.*),", '"\\1",', line)
+    line <- gsub('"', '', line)
+    if (grepl(",APPROVED|,UNAPPROVED", line)) {
+      # line <- gsub("^(.*?)(,APPROVED|,approved|,UNAPPROVED|,unapproved)", '"\\1"\\2', line)
+      line <- gsub('(.*?)"?(,APPROVED|,approved|,UNAPPROVED|,unapproved)', '"\\1"\\2', line)
     }
     return(line)
   })
@@ -101,9 +103,10 @@ for (i in seq_along(deidentified_results$deidentified_datasets)) {
   
   arrow::write_dataset(dataset = deidentified_results$deidentified_datasets[[i]], 
                        path = file.path(PARQUET_FINAL_LOCATION, names(deidentified_results$deidentified_datasets)[[i]]), 
-                       max_rows_per_file = 100000,
+                       max_rows_per_file = 1000000,
                        partitioning = c('cohort'), 
-                       existing_data_behavior = 'delete_matching')
+                       existing_data_behavior = 'delete_matching',
+                       basename_template = paste0("part-0000{i}.", as.character("parquet")))
 }
 
 
