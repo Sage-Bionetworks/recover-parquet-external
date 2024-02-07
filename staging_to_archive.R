@@ -46,12 +46,12 @@ if (!is.null(synFindEntityId(validated_date, config::get("PARQUET_FOLDER_ARCHIVE
   sync_cmd <- glue::glue("aws s3 --profile service-catalog sync {STAGING_TO_ARCHIVE_DOWNLOAD_LOCATION} {base_s3_uri_archive}{validated_date}/ --exclude '*owner.txt*' --exclude '*archive*'")
   system(sync_cmd)
   
-  rm(sync_cmd, validated_date)
+  rm(sync_cmd)
   
-  # Sync entire bucket to local
+  # Sync new date dir in archive bucket to local
   unlink(STAGING_TO_ARCHIVE_DOWNLOAD_LOCATION, recursive = T, force = T)
   unlink(AWS_ARCHIVE_DOWNLOAD_LOCATION, recursive = T, force = T)
-  sync_cmd <- glue::glue('aws s3 --profile service-catalog sync {base_s3_uri_archive} {AWS_ARCHIVE_DOWNLOAD_LOCATION} --exclude "*owner.txt*" --exclude "*archive*"')
+  sync_cmd <- glue::glue('aws s3 --profile service-catalog sync {base_s3_uri_archive}{validated_date}/ {AWS_ARCHIVE_DOWNLOAD_LOCATION}/{validated_date}/ --exclude "*owner.txt*" --exclude "*archive*"')
   system(sync_cmd)
   
   # Modify cohort identifier in dir name
