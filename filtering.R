@@ -48,7 +48,7 @@ drop_cols_datasets <- function(dataset, columns=c(), input = AWS_PARQUET_DOWNLOA
     arrow::open_dataset(sources = input_path) %>% 
       dplyr::select(!dplyr::any_of(columns)) %>% 
       arrow::write_dataset(path = final_path, 
-                           max_rows_per_file = 100000,
+                           max_rows_per_file = 1000000,
                            partitioning = partitions, 
                            existing_data_behavior = 'delete_matching',
                            basename_template = paste0("part-0000{i}.", as.character("parquet")))
