@@ -1,7 +1,8 @@
 # Functions ---------------------------------------------------------------
 #' Calculate age from Date of Birth
 #'
-#' This function calculates the age of individuals based on their date of birth.
+#' This function calculates the age of individuals based on their date of 
+#' birth and replaces ages above 89 with the string "90+".
 #'
 #' @param dataset The name of the dataset to process.
 #' @param column The name of the column in the dataset that contains Date of Birth (DoB) information.
@@ -18,6 +19,8 @@ dob2age <- function(dataset, column, input = AWS_PARQUET_DOWNLOAD_LOCATION, part
     
     arrow::open_dataset(sources = input_path) %>% 
       dplyr::mutate(age = lubridate::year(lubridate::today())-lubridate::year(lubridate::as_date(!!sym(column)))) %>% 
+      dplyr::collect() %>% 
+      dplyr::mutate(age = ifelse(age>89, "90+", age)) %>% 
       arrow::write_dataset(path = input_path, 
                            max_rows_per_file = 100000, 
                            partitioning = partitions, 
@@ -75,7 +78,7 @@ cols_to_drop <- lapply(datasets_to_filter, function(x) {
 
 tmp <- 
   lapply(seq_along(datasets_to_filter), function(i) {
-    cat(i, "Dropping", cols_to_drop[[i]], "from", datasets_to_filter[[i]], "\n")
+    cat(i, "Dropping", cols_to_drop[[i]], "from", datasets_to_filter[[i]], "\n\n")
     drop_cols_datasets(dataset = datasets_to_filter[[i]], 
                        columns = cols_to_drop[[i]], 
                        input = AWS_PARQUET_DOWNLOAD_LOCATION, 
