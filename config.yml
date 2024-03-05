@@ -12,6 +12,7 @@ prod:
   # Local locations where parquet bucket files are synced to
   AWS_PARQUET_DOWNLOAD_LOCATION: ./temp_aws_parquet
   AWS_ARCHIVE_DOWNLOAD_LOCATION: ./temp_aws_archive
+  AWS_CURRENT_DOWNLOAD_LOCATION: ./temp_aws_current
   PARQUET_FILTERED_LOCATION: ./parquet_filtered
   PARQUET_FINAL_LOCATION: ./parquet_final
   # Synapse locations where the S3 bucket objects are to be indexed
@@ -22,6 +23,7 @@ prod:
   PII_COLS_TO_DROP: syn52523394
   DEID_VALS_TO_REVIEW: syn52409518
   STAGING_TO_ARCHIVE_DOWNLOAD_LOCATION: ./temp_staging_to_archive/
+  ARCHIVE_TO_CURRENT_DOWNLOAD_LOCATION: ./temp_archive_to_current/
   POST_WITHDRAW_LOCATION: ./temp_post_withdraw
 
 staging:
@@ -30,3 +32,8 @@ staging:
   AWS_ARCHIVE_DOWNLOAD_LOCATION: ./temp_aws_staging
   PARQUET_FOLDER_ARCHIVE: syn52912560
   SYNAPSE_FILEVIEW_ID: syn52912727
+
+current:
+  inherits: prod
+  SYNAPSE_FILEVIEW_ID: syn53771770
+  
