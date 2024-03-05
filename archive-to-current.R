@@ -42,7 +42,7 @@ base_s3_uri_current <-
 validated_date <- readline("Enter name of Archive folder in yyyy-mm-dd format: ")
 
 # Index files in Synapse --------------------------------------------------
-# if (!is.null(synFindEntityId(validated_date, config::get("PARQUET_FOLDER_ARCHIVE", "prod")))) {
+if (!is.null(synFindEntityId(validated_date, config::get("PARQUET_FOLDER_ARCHIVE", "prod")))) {
   sync_cmd <- glue::glue("aws s3 --profile service-catalog sync {base_s3_uri_archive}{validated_date}/ {ARCHIVE_TO_CURRENT_DOWNLOAD_LOCATION} --exclude '*owner.txt*' --exclude '*archive*'")
   system(sync_cmd)
   rm(sync_cmd)
@@ -134,4 +134,4 @@ validated_date <- readline("Enter name of Archive folder in yyyy-mm-dd format: "
       
     }
   }
-# }
+}
