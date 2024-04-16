@@ -115,10 +115,19 @@ Sys.setenv('AWS_ACCESS_KEY_ID'=token$accessKeyId,
            'AWS_SECRET_ACCESS_KEY'=token$secretAccessKey,
            'AWS_SESSION_TOKEN'=token$sessionToken)
 
+s3 <- arrow::S3FileSystem$create(access_key = token$accessKeyId,
+                                 secret_key = token$secretAccessKey,
+                                 session_token = token$sessionToken,
+                                 region="us-east-1")
+
+archive_uri <- paste0(token$bucket, '/', token$baseKey, '/archive/')
+archive_list <- s3$GetFileInfo(arrow::FileSelector$create(archive_uri, recursive=F))
+latest_archive <- archive_list[[length(archive_list)]]$path
+
 
 # Sync bucket to local dir ------------------------------------------------
 unlink(AWS_PARQUET_DOWNLOAD_LOCATION, recursive = T, force = T)
-sync_cmd <- glue::glue('aws s3 sync {base_s3_uri} {AWS_PARQUET_DOWNLOAD_LOCATION} --exclude "*owner.txt*" --exclude "*archive*"')
+sync_cmd <- glue::glue('aws s3 sync s3://{latest_archive}/ {AWS_PARQUET_DOWNLOAD_LOCATION} --exclude "*owner.txt*" --exclude "*archive*"')
 system(sync_cmd)
 
 
