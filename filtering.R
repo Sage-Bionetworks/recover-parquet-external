@@ -78,7 +78,10 @@ cols_to_drop <- lapply(datasets_to_filter, function(x) {
 
 tmp <- 
   lapply(seq_along(datasets_to_filter), function(i) {
-    cat(i, "Dropping", cols_to_drop[[i]], "from", datasets_to_filter[[i]], "\n\n")
+    cat(i)
+    cat(": Dropping from [", datasets_to_filter[[i]], "]", "\n")
+    cat(cols_to_drop[[i]], sep = ", ")
+    cat("\n\n")
     drop_cols_datasets(dataset = datasets_to_filter[[i]], 
                        columns = cols_to_drop[[i]], 
                        input = AWS_PARQUET_DOWNLOAD_LOCATION, 
