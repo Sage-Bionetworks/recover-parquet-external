@@ -215,6 +215,11 @@ if (nrow(synapse_fileview)>0) {
 latest_commit <- gh::gh("/repos/:owner/:repo/commits/main", owner = "Sage-Bionetworks", repo = "recover-parquet-external")
 latest_commit_tree_url <- latest_commit$html_url %>% stringr::str_replace("commit", "tree")
 
+act <- synapser::Activity(name = "Indexing",
+                          description = "Indexing external parquet datasets",
+                          used = paste0("s3://", latest_archive), 
+                          executed = latest_commit_tree_url)
+
 if(nrow(synapse_manifest_to_upload) > 0){
   for(file_number in seq_len(nrow(synapse_manifest_to_upload))){
     tmp <- synapse_manifest_to_upload[file_number, c("path", "parent", "s3_file_key")]
@@ -234,11 +239,7 @@ if(nrow(synapse_manifest_to_upload) > 0){
               parentId = tmp$parent,
               name = new_fileName)
     
-    f <- synStore(f, 
-                  activityName = "Indexing", 
-                  activityDescription = "Indexing external parquet datasets",
-                  used = PARQUET_FOLDER_INTERNAL, 
-                  executed = latest_commit_tree_url)
+    f <- synStore(f,  activity = act)
     
   }
 }
