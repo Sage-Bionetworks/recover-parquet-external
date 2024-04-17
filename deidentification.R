@@ -10,6 +10,11 @@ unlink('./dictionaries/', recursive = T, force = T)
 # Get dictionaries --------------------------------------------------------
 system('synapse get -r syn52316269 --downloadLocation ./dictionaries/ --manifest suppress')
 
+list.files("./dictionaries", full.names = T) %>% lapply(function(x) {
+  y <- x %>% stringr::str_remove_all("[0-9]")
+  file.rename(from = x, to = y)
+})
+
 junk <- lapply(list.files("./dictionaries/", full.names = T), function(f) {
   lines <- readLines(f)
   
@@ -122,15 +127,15 @@ for (i in seq_along(deidentified_results$values_to_review)) {
 
 # Index each file in Synapse
 latest_commit <- gh::gh("/repos/:owner/:repo/commits/main", owner = "Sage-Bionetworks", repo = "recover-parquet-external")
-latest_commit_file_url <- latest_commit$files[[1]]$blob_url
+latest_commit_file_url <- paste0(latest_commit$html_url %>% stringr::str_replace("commit", "blob"), "/deidentification.R")
 
 for (i in seq_along(list.files('./dictionaries/new_to_review/'))) {
-  synStore(File(path = list.files('./dictionaries/new_to_review', full.names = T)[i], 
+  synStore(File(path = list.files('./dictionaries/new_to_review', full.names = T)[i],
                 parent = DEID_VALS_TO_REVIEW),
           activityName = "Indexing",
           activityDescription = "Indexing files containing new PII values to review for deidentification step",
-          used = c((synGetChildren('syn52316269') %>% as.list())[[i]]$id, 
-                   synFindEntityId(names(deidentified_results$deidentified_datasets)[i], 
+          used = c((synGetChildren(DICTIONARIES_FOLDER) %>% as.list())[[i]]$id,
+                   synFindEntityId(names(deidentified_results$deidentified_datasets)[i],
                                    parent = PARQUET_FOLDER_INTERNAL)),
           executed = latest_commit_file_url
           )
