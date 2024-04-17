@@ -152,7 +152,7 @@ source('~/recover-parquet-external/deidentification.R')
 
 
 # Sync final parquets to bucket -------------------------------------------
-date <- lubridate::today()
+date <- latest_archive %>% stringr::str_extract("[0-9]{4}_[0-9]{2}_[0-9]{2}")
 sync_cmd <- glue::glue('aws s3 --profile service-catalog sync {PARQUET_FINAL_LOCATION} {base_s3_uri_archive}{date}/ --exclude "*owner.txt*" --exclude "*archive*"')
 system(sync_cmd)
 
