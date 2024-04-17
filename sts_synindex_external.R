@@ -1,8 +1,6 @@
 library(synapser)
 library(arrow)
 library(dplyr)
-library(synapserutils)
-library(rjson)
 
 
 # Functions ---------------------------------------------------------------
