@@ -108,7 +108,8 @@ for (i in seq_along(deidentified_results$deidentified_datasets)) {
   
   arrow::write_dataset(dataset = deidentified_results$deidentified_datasets[[i]], 
                        path = file.path(PARQUET_FINAL_LOCATION, names(deidentified_results$deidentified_datasets)[[i]]), 
-                       max_rows_per_file = 1000000,
+                       max_open_files = 2048,
+                       max_rows_per_file = 5000000,
                        partitioning = c('cohort'), 
                        existing_data_behavior = 'delete_matching',
                        basename_template = paste0("part-0000{i}.", as.character("parquet")))

@@ -89,6 +89,7 @@ if (length(participants_to_withdraw) > 0) {
     d %>% 
       arrow::write_dataset(
         path = file.path(POST_WITHDRAW_LOCATION, basename(x)),
+        max_open_files = 2048,
         max_rows_per_file = 5000000,
         partitioning = "cohort",
         existing_data_behavior = 'delete_matching',

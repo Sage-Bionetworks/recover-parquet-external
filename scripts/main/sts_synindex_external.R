@@ -130,11 +130,11 @@ system(sync_cmd)
 
 
 # Remove withdrawn participants -------------------------------------------
-source("~/recover-parquet-external/remove_withdrawn_participants.R")
+source("~/recover-parquet-external/scripts/withdrawal/remove_withdrawn_participants.R")
 
 
 # Filter parquet datasets -------------------------------------------------
-source('~/recover-parquet-external/filtering.R')
+source('~/recover-parquet-external/scripts/filtering/filtering.R')
 
 # Copy unfiltered parquet datasets to new location with filtered parquet datasets
 unlink(PARQUET_FINAL_LOCATION, recursive = T, force = T)
@@ -148,7 +148,7 @@ unlink(PARQUET_FILTERED_LOCATION, recursive = T, force = T)
 
 
 # De-identify parquet datasets --------------------------------------------
-source('~/recover-parquet-external/deidentification.R')
+source('~/recover-parquet-external/scripts/deidentification/deidentification.R')
 
 
 # Sync final parquets to bucket -------------------------------------------
@@ -186,7 +186,6 @@ synapse_manifest <-
   dplyr::ungroup() %>% 
   dplyr::mutate(file_key = gsub("cohort_", "cohort=", file_key),
                 s3_file_key = gsub("cohort_", "cohort=", s3_file_key))
-
 
 # List all files currently indexed in Synapse
 synapse_fileview <- 
