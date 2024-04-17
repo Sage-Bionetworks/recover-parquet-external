@@ -105,7 +105,7 @@ if (!is.null(synFindEntityId(validated_date, config::get("PARQUET_FOLDER_ARCHIVE
   # Index each file in Synapse
   latest_commit <- gh::gh("/repos/:owner/:repo/commits/main", owner = "Sage-Bionetworks", repo = "recover-parquet-external")
   # latest_commit_tree_url <- latest_commit$html_url %>% stringr::str_replace("commit", "tree")
-  latest_commit_this_file <- paste0(latest_commit$html_url %>% stringr::str_replace("commit", "blob"), "/archive-to-current.R")
+  latest_commit_this_file <- paste0(latest_commit$html_url %>% stringr::str_replace("commit", "blob"), "/scripts/main/archive-to-current.R")
   
   if(nrow(synapse_manifest_to_upload) > 0){
     for(file_number in seq_len(nrow(synapse_manifest_to_upload))){

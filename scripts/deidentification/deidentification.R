@@ -128,7 +128,7 @@ for (i in seq_along(deidentified_results$values_to_review)) {
 
 # Index each file in Synapse
 latest_commit <- gh::gh("/repos/:owner/:repo/commits/main", owner = "Sage-Bionetworks", repo = "recover-parquet-external")
-latest_commit_file_url <- paste0(latest_commit$html_url %>% stringr::str_replace("commit", "blob"), "/deidentification.R")
+latest_commit_file_url <- paste0(latest_commit$html_url %>% stringr::str_replace("commit", "blob"), "/scripts/deidentification/deidentification.R")
 
 for (i in seq_along(list.files('./dictionaries/new_to_review/'))) {
   synStore(File(path = list.files('./dictionaries/new_to_review', full.names = T)[i],

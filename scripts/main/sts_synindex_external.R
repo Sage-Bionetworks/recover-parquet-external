@@ -214,7 +214,7 @@ if (nrow(synapse_fileview)>0) {
 
 # Index each file in Synapse
 latest_commit <- gh::gh("/repos/:owner/:repo/commits/main", owner = "Sage-Bionetworks", repo = "recover-parquet-external")
-latest_commit_this_file <- paste0(latest_commit$html_url %>% stringr::str_replace("commit", "blob"), "/sts_synindex_external.R")
+latest_commit_this_file <- paste0(latest_commit$html_url %>% stringr::str_replace("commit", "blob"), "/scripts/main/sts_synindex_external.R")
 
 act <- synapser::Activity(name = "Indexing",
                           description = "Indexing external parquet datasets",
