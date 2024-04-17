@@ -22,7 +22,8 @@ dob2age <- function(dataset, column, input = AWS_PARQUET_DOWNLOAD_LOCATION, part
       dplyr::collect() %>% 
       dplyr::mutate(age = ifelse(age>89, "90+", age)) %>% 
       arrow::write_dataset(path = input_path, 
-                           max_rows_per_file = 100000, 
+                           max_open_files = 2048,
+                           max_rows_per_file = 1000000, 
                            partitioning = partitions, 
                            existing_data_behavior = 'delete_matching')
   }
@@ -51,7 +52,8 @@ drop_cols_datasets <- function(dataset, columns=c(), input = AWS_PARQUET_DOWNLOA
     arrow::open_dataset(sources = input_path) %>% 
       dplyr::select(!dplyr::any_of(columns)) %>% 
       arrow::write_dataset(path = final_path, 
-                           max_rows_per_file = 1000000,
+                           max_open_files = 2048,
+                           max_rows_per_file = 5000000,
                            partitioning = partitions, 
                            existing_data_behavior = 'delete_matching',
                            basename_template = paste0("part-0000{i}.", as.character("parquet")))
@@ -78,7 +80,10 @@ cols_to_drop <- lapply(datasets_to_filter, function(x) {
 
 tmp <- 
   lapply(seq_along(datasets_to_filter), function(i) {
-    cat(i, "Dropping", cols_to_drop[[i]], "from", datasets_to_filter[[i]], "\n\n")
+    cat(i)
+    cat(": Dropping from [", datasets_to_filter[[i]], "]", "\n")
+    cat(cols_to_drop[[i]], sep = ", ")
+    cat("\n\n")
     drop_cols_datasets(dataset = datasets_to_filter[[i]], 
                        columns = cols_to_drop[[i]], 
                        input = AWS_PARQUET_DOWNLOAD_LOCATION, 

@@ -1,8 +1,6 @@
 library(synapser)
 library(arrow)
 library(dplyr)
-library(synapserutils)
-library(rjson)
 
 
 # Functions ---------------------------------------------------------------
@@ -115,19 +113,28 @@ Sys.setenv('AWS_ACCESS_KEY_ID'=token$accessKeyId,
            'AWS_SECRET_ACCESS_KEY'=token$secretAccessKey,
            'AWS_SESSION_TOKEN'=token$sessionToken)
 
+s3 <- arrow::S3FileSystem$create(access_key = token$accessKeyId,
+                                 secret_key = token$secretAccessKey,
+                                 session_token = token$sessionToken,
+                                 region="us-east-1")
+
+archive_uri <- paste0(token$bucket, '/', token$baseKey, '/archive/')
+archive_list <- s3$GetFileInfo(arrow::FileSelector$create(archive_uri, recursive=F))
+latest_archive <- archive_list[[length(archive_list)]]$path
+
 
 # Sync bucket to local dir ------------------------------------------------
 unlink(AWS_PARQUET_DOWNLOAD_LOCATION, recursive = T, force = T)
-sync_cmd <- glue::glue('aws s3 sync {base_s3_uri} {AWS_PARQUET_DOWNLOAD_LOCATION} --exclude "*owner.txt*" --exclude "*archive*"')
+sync_cmd <- glue::glue('aws s3 sync s3://{latest_archive}/ {AWS_PARQUET_DOWNLOAD_LOCATION} --exclude "*owner.txt*" --exclude "*archive*"')
 system(sync_cmd)
 
 
 # Remove withdrawn participants -------------------------------------------
-source("~/recover-parquet-external/remove_withdrawn_participants.R")
+source("~/recover-parquet-external/scripts/withdrawal/remove_withdrawn_participants.R")
 
 
 # Filter parquet datasets -------------------------------------------------
-source('~/recover-parquet-external/filtering.R')
+source('~/recover-parquet-external/scripts/filtering/filtering.R')
 
 # Copy unfiltered parquet datasets to new location with filtered parquet datasets
 unlink(PARQUET_FINAL_LOCATION, recursive = T, force = T)
@@ -141,11 +148,11 @@ unlink(PARQUET_FILTERED_LOCATION, recursive = T, force = T)
 
 
 # De-identify parquet datasets --------------------------------------------
-source('~/recover-parquet-external/deidentification.R')
+source('~/recover-parquet-external/scripts/deidentification/deidentification.R')
 
 
 # Sync final parquets to bucket -------------------------------------------
-date <- lubridate::today()
+date <- latest_archive %>% stringr::str_extract("[0-9]{4}_[0-9]{2}_[0-9]{2}")
 sync_cmd <- glue::glue('aws s3 --profile service-catalog sync {PARQUET_FINAL_LOCATION} {base_s3_uri_archive}{date}/ --exclude "*owner.txt*" --exclude "*archive*"')
 system(sync_cmd)
 
@@ -180,7 +187,6 @@ synapse_manifest <-
   dplyr::mutate(file_key = gsub("cohort_", "cohort=", file_key),
                 s3_file_key = gsub("cohort_", "cohort=", s3_file_key))
 
-
 # List all files currently indexed in Synapse
 synapse_fileview <- 
   synapser::synTableQuery(paste0('SELECT * FROM ', SYNAPSE_FILEVIEW_ID))$filepath %>%
@@ -204,7 +210,12 @@ if (nrow(synapse_fileview)>0) {
 
 # Index each file in Synapse
 latest_commit <- gh::gh("/repos/:owner/:repo/commits/main", owner = "Sage-Bionetworks", repo = "recover-parquet-external")
-latest_commit_tree_url <- latest_commit$html_url %>% stringr::str_replace("commit", "tree")
+latest_commit_this_file <- paste0(latest_commit$html_url %>% stringr::str_replace("commit", "blob"), "/sts_synindex_external.R")
+
+act <- synapser::Activity(name = "Indexing",
+                          description = "Indexing external parquet datasets",
+                          used = paste0("s3://", latest_archive), 
+                          executed = latest_commit_this_file)
 
 if(nrow(synapse_manifest_to_upload) > 0){
   for(file_number in seq_len(nrow(synapse_manifest_to_upload))){
@@ -225,11 +236,7 @@ if(nrow(synapse_manifest_to_upload) > 0){
               parentId = tmp$parent,
               name = new_fileName)
     
-    f <- synStore(f, 
-                  activityName = "Indexing", 
-                  activityDescription = "Indexing external parquet datasets",
-                  used = PARQUET_FOLDER_INTERNAL, 
-                  executed = latest_commit_tree_url)
+    f <- synStore(f,  activity = act)
     
   }
 }

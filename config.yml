@@ -25,6 +25,7 @@ prod:
   STAGING_TO_ARCHIVE_DOWNLOAD_LOCATION: ./temp_staging_to_archive/
   ARCHIVE_TO_CURRENT_DOWNLOAD_LOCATION: ./temp_archive_to_current/
   POST_WITHDRAW_LOCATION: ./temp_post_withdraw
+  DICTIONARIES_FOLDER: syn52316269
 
 staging:
   inherits: prod
