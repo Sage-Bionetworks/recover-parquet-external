@@ -91,6 +91,11 @@ replace_equal_with_underscore <- function(directory_path) {
 synapser::synLogin(authToken = Sys.getenv('SYNAPSE_AUTH_TOKEN'))
 config::get(config = "staging") %>% list2env(envir = .GlobalEnv)
 
+unlink(x = c(AWS_PARQUET_DOWNLOAD_LOCATION,
+             AWS_ARCHIVE_DOWNLOAD_LOCATION,
+             PARQUET_FINAL_LOCATION), 
+       recursive = TRUE, 
+       force = TRUE)
 
 # Get STS credentials for input data bucket -------------------------------
 token <- 
