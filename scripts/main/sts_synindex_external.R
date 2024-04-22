@@ -218,7 +218,7 @@ latest_commit_this_file <- paste0(latest_commit$html_url %>% stringr::str_replac
 
 act <- synapser::Activity(name = "Indexing",
                           description = "Indexing external parquet datasets",
-                          used = paste0("s3://", latest_archive), 
+                          used = paste0("https://s3.amazonaws.com/", latest_archive), 
                           executed = latest_commit_this_file)
 
 if(nrow(synapse_manifest_to_upload) > 0){
