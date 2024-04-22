@@ -91,6 +91,11 @@ replace_equal_with_underscore <- function(directory_path) {
 synapser::synLogin(authToken = Sys.getenv('SYNAPSE_AUTH_TOKEN'))
 config::get(config = "staging") %>% list2env(envir = .GlobalEnv)
 
+unlink(x = c(AWS_PARQUET_DOWNLOAD_LOCATION,
+             AWS_ARCHIVE_DOWNLOAD_LOCATION,
+             PARQUET_FINAL_LOCATION), 
+       recursive = TRUE, 
+       force = TRUE)
 
 # Get STS credentials for input data bucket -------------------------------
 token <- 
@@ -218,7 +223,7 @@ latest_commit_this_file <- paste0(latest_commit$html_url %>% stringr::str_replac
 
 act <- synapser::Activity(name = "Indexing",
                           description = "Indexing external parquet datasets",
-                          used = paste0("s3://", latest_archive), 
+                          used = paste0("https://s3.amazonaws.com/", latest_archive), 
                           executed = latest_commit_this_file)
 
 if(nrow(synapse_manifest_to_upload) > 0){
