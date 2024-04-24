@@ -19,6 +19,11 @@ replace_equal_with_underscore <- function(directory_path) {
   }
 }
 
+unlink(x = c(config::get("AWS_ARCHIVE_DOWNLOAD_LOCATION", "staging"),
+             config::get("PARQUET_FINAL_LOCATION", "staging")), 
+       recursive = TRUE, 
+       force = TRUE)
+
 synapser::synLogin(authToken = Sys.getenv('SYNAPSE_AUTH_TOKEN'))
 
 base_s3_uri_staging <- 
@@ -100,9 +105,38 @@ if (!is.null(synFindEntityId(validated_date, config::get("PARQUET_FOLDER_ARCHIVE
   }
   
   # Index each file in Synapse
-  latest_commit <- gh::gh("/repos/:owner/:repo/commits/main", owner = "Sage-Bionetworks", repo = "recover-parquet-external")
-  # latest_commit_tree_url <- latest_commit$html_url %>% stringr::str_replace("commit", "tree")
-  latest_commit_this_file <- paste0(latest_commit$html_url %>% stringr::str_replace("commit", "blob"), "/scripts/main/staging_to_archive.R")
+  latest_commit <- 
+    gh::gh("/repos/:owner/:repo/commits/main", 
+           owner = "Sage-Bionetworks", 
+           repo = "recover-parquet-external")
+  
+  latest_commit_this_file <- 
+    paste0(latest_commit$html_url %>% stringr::str_replace("commit", "blob"), 
+           "/scripts/main/staging_to_archive.R")
+  
+  staging_file_provenance_used <- 
+    synFindEntityId(validated_date, 
+                    config::get("PARQUET_FOLDER_ARCHIVE", "staging")) %>% 
+    synGetChildren() %>% 
+    synapser::as.list() %>% 
+    .[[1]] %>% 
+    .$id %>% 
+    synGetChildren() %>% 
+    synapser::as.list() %>% 
+    .[[1]] %>% 
+    .$id %>% 
+    synGetChildren() %>% 
+    synapser::as.list() %>% 
+    .[[1]] %>% 
+    .$id %>% 
+    synGetProvenance() %>% 
+    as.character() %>% 
+    stringr::str_extract(pattern = "(?<=Used:\n).*")
+  
+  act <- synapser::Activity(name = "Indexing",
+                            description = "Indexing external parquet datasets",
+                            used = staging_file_provenance_used, 
+                            executed = latest_commit_this_file)
   
   if(nrow(synapse_manifest_to_upload) > 0){
     for(file_number in seq_len(nrow(synapse_manifest_to_upload))){
@@ -123,11 +157,7 @@ if (!is.null(synFindEntityId(validated_date, config::get("PARQUET_FOLDER_ARCHIVE
                 parentId = tmp$parent,
                 name = new_fileName)
       
-      f <- synStore(f, 
-                    activityName = "Indexing", 
-                    activityDescription = "Indexing external parquet datasets",
-                    used = PARQUET_FOLDER_INTERNAL, 
-                    executed = latest_commit_this_file)
+      f <- synStore(f, activity = act)
       
     }
   }
