@@ -3,52 +3,89 @@
 [![Build and publish a Docker image](https://github.com/Sage-Bionetworks/recover-parquet-external/actions/workflows/docker-build.yml/badge.svg?branch=main)](https://github.com/Sage-Bionetworks/recover-parquet-external/actions/workflows/docker-build.yml)
 
 ## Purpose
-This repository hosts code for the pipeline that indexes files from S3 storage in a Synapse project/folder using the STS process. The code is written in R and offers two methods for running the pipeline:
+This repository hosts code for the pipeline that syncs data from an internal processed data S3 bucket, transforms the data (filtering, de-identification, etc.), and then stores the transformed data in a separate S3 bucket as well as indexes the transformed data in Synapse.
 
-1. Executing the code in an R environment, e.g., RStudio in an EC2 instance (see [Method 1: Running in an R Environment](#method-1-running-in-an-r-environment))
-2. Running the pipeline using a Docker container for easy setup and portability (see [Method 2: Running with Docker](#method-2-running-with-docker))
+## Requirements
 
-## Prerequisites
+-   R >= 4.0.0
+-   Docker
+-   Synapse account with relevant access permissions
+-   Synapse authentication token
 
-- Synapse account with relevant access permissions
-- Synapse authentication tokens
+A Synapse authentication token is required for use of the Synapse APIs (e.g. the `synapser` package for R) and CLI client. For help with Synapse, Synapse APIs, Synapse authentication tokens, etc., please refer to the [Synapse documentation](https://help.synapse.org/docs/).
 
-A Synapse authentication token is required for use of the Synapse APIs and CLI client. For help with Synapse, Synapse APIs, Synapse authentication tokens, etc., please refer to the [Synapse documentation](https://help.synapse.org/docs/).
+Your personal access token should have **View, Modify and Download** permissions; you can see your currently provisioned tokens [here](https://www.synapse.org/#!PersonalAccessTokens:). If you don't have a Synapse personal access token, refer to the instructiocs [here](https://sagebionetworks.jira.com/wiki/spaces/SC/pages/938836322/Service+Catalog+Provisioning#Create-a-Synapse-personal-access-token) to get a new token.
 
-## Installation & Usage
+## Usage
 
-### Method 1: Running in an R Environment
+There are two methods to run this pipeline:
+1. [**Docker container**](#via-docker-container), or
+2. [**Manually**](#manually)
 
-#### Setup your environment
+### Set Synapse Personal Access Token
 
-1. Provision an EC2 Rstudio Notebook instance
-2. Upgrade pip in the terminal of the EC2 instance with `python -m pip install --upgrade pip`
-3. Install the Synapse CLI client in the terminal with `pip install synapseclient`
+Regardless of which method you use, you need to set your Synapse Personal Access Token somewhere in your environment. See the examples below
 
-Note: If you are having issues during installation of the Synapse CLI client, consider upgrading pip with `python -m pip install --upgrade pip` before attempting to reinstall `synapseclient`. If you still have issues, force re-install `synapseclient` from the terminal via `pip install --upgrade --force-reinstall synapseclient`.
+1.  Option 1: For only the current shell session:
 
-4. Create a `.Renviron` file in the home folder with the environment variable `SYNAPSE_AUTH_TOKEN='<personal-access-token>'`. Replace `<personal-access-token>` with your actual token. Your personal access token should have **View, Modify and Download** permissions. If you don't have a Synapse personal access token, refer to the instructiocs here to get a new token: [Personal Access Token in Synapse](https://www.synapse.org/#!PersonalAccessTokens:).
+```Shell
+export SYNAPSE_AUTH_TOKEN=<your-token>
+```
 
-#### Setup SSM Access to the S3 bucket
+2. Option 2: For all future shell sessions (modify your shell profile)
 
-5. Please follow the instructions to [Create a Synapse personal access token (for AWS SSM Access)](https://sagebionetworks.jira.com/wiki/spaces/SC/pages/938836322/Service+Catalog+Provisioning#Create-a-Synapse-personal-access-token) 
-6. Please follow instructions 3-5 to set up [SSM Access to an Instance](https://sagebionetworks.jira.com/wiki/spaces/SC/pages/938836322/Service+Catalog+Provisioning#SSM-access-to-an-Instance). (Note: AWS CLI version that is installed on the EC2 offering is ver 2.x)
+```Shell
+# Open the profile file
+nano ~/.bash_profile
 
-#### Clone the repo and install required R libraries
+# Append the following
+SYNAPSE_AUTH_TOKEN=<your-token>
+export SYNAPSE_AUTH_TOKEN
 
-7. Clone this repository and switch to the new project
-8. Modify the parameters in [config.yml](config.yml)
-9. Run [install_requirements.R](install_requirements.R)
-10. Start a new R session (type `q()` in the R console)
+# Save the file
+source ~/.bash_profile
+```
 
-#### Run the ingress pipeline
-10. Run [sts_synindex_external.R](sts_synindex_external.R)
-11. Set up a job to run [sts_synindex_external.R](sts_synindex_external.R) at your required frequency
+### Method 1: via Docker Container
 
-### Method 2: Running with Docker
+For the Docker method, there is a pre-published docker image available [here](https://github.com/Sage-Bionetworks/recover-parquet-external/pkgs/container/recover-parquet-external).
 
-1. Pull the docker image with `docker pull ghcr.io/sage-bionetworks/recover-parquet-external:main`
-2. Run a container with `docker run -e AWS_SYNAPSE_TOKEN=<aws-cli-token> -e SYNAPSE_AUTH_TOKEN=<synapse-auth-token> <image-name>`
-3. If desired, setup a scheduled job (AWS Scheduled Jobs, cron, etc.) using the docker image (ghcr.io/sage-bionetworks/recover-parquet-external:main) to run the pipeline at your desired frequency
+The primary purpose of using Docker is that the pre-made docker image in this repo contains instructions to:
 
-Note: Replace `<aws-cli-token>` and `<synapse-auth-token>` with the actual token values. When provisioning a Scheduled Job, `<aws-cli-token>` and `<synapse-auth-token>` should be specified in the `Secrets` and/or `EnvVars` fields of the provisioning settings page.
+- Create an environment with the dependencies needed by the pipeline
+- Run a script containing the instructions for the pipeline, so that you don't need to manually find and run a specific script(s) or code
+
+1.  Pull the docker image
+
+```Shell
+docker pull ghcr.io/sage-bionetworks/recover-parquet-external:main
+```
+
+2.  Run the docker container
+
+```Shell
+docker run \
+  --name container-name \
+  -e SYNAPSE_AUTH_TOKEN=$SYNAPSE_AUTH_TOKEN \
+  ghcr.io/sage-bionetworks/recover-parquet-external:main
+```
+
+3. **(Optional)** Setup a scheduled job (AWS, cron, etc.) using the docker image to run the pipeline at a set frequency or when certain conditions are met
+
+### Method 2: Manually
+
+To run the pipeline manually, please follow the instructions in this section.
+
+1. Clone this repo and set it as your working directory
+
+```Shell
+git clone https://github.com/Sage-Bionetworks/recover-parquet-external.git
+```
+
+2. Modify the parameters in the [config](config/config.yml) as needed
+3. Run [install_requirements.R](install_requirements.R)
+
+4. Run [sts_synindex_external.R](scripts/main/sts_synindex_external.R) to generate the external parquet datasets in the staging locations (S3 and Synapse).
+5. Once the datasets in the staging location have been validated, run [staging_to_archive.R](scripts/main/staging_to_archive.R) to generate the validated external parquet datasets in the date-tagged prod Archive locations (S3 and Synapse).
+6. As needed, run [archive-to-current.R](scripts/main/archive-to-current.R) to update the Current Freeze version of the external parquet data in the appropriate locations (S3 and Synapse).
+7. **(Optional)** Setup a scheduled job (AWS, cron, etc.) using the docker image to run the pipeline at a set frequency or when certain conditions are met
