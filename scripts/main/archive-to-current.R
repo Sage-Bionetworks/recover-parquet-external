@@ -1,7 +1,7 @@
+rm(list = ls())
+
 library(synapser)
 library(tidyverse)
-
-rm(list = ls())
 
 #' Replace equal sign with underscore
 #'
@@ -20,6 +20,11 @@ replace_equal_with_underscore <- function(directory_path) {
     return(cat("Renamed:", directory_path, "to", new_directory_path, "\n"))
   }
 }
+
+unlink(x = c(config::get("AWS_ARCHIVE_DOWNLOAD_LOCATION", "prod"),
+             config::get("PARQUET_FINAL_LOCATION", "prod")), 
+       recursive = TRUE, 
+       force = TRUE)
 
 synapser::synLogin(authToken = Sys.getenv('SYNAPSE_AUTH_TOKEN'))
 
@@ -103,9 +108,20 @@ if (!is.null(synFindEntityId(validated_date, config::get("PARQUET_FOLDER_ARCHIVE
   }
   
   # Index each file in Synapse
-  latest_commit <- gh::gh("/repos/:owner/:repo/commits/main", owner = "Sage-Bionetworks", repo = "recover-parquet-external")
-  # latest_commit_tree_url <- latest_commit$html_url %>% stringr::str_replace("commit", "tree")
-  latest_commit_this_file <- paste0(latest_commit$html_url %>% stringr::str_replace("commit", "blob"), "/scripts/main/archive-to-current.R")
+  latest_commit <- 
+    gh::gh("/repos/:owner/:repo/commits/main", 
+           owner = "Sage-Bionetworks", 
+           repo = "recover-parquet-external")
+  
+  latest_commit_this_file <- 
+    paste0(latest_commit$html_url %>% stringr::str_replace("commit", "blob"), 
+           "/scripts/main/archive-to-current.R")
+  
+  act <- 
+    synapser::Activity(name = "Indexing",
+                       description = "Indexing external parquet datasets",
+                       used = synFindEntityId(validated_date, config::get("PARQUET_FOLDER_ARCHIVE", "prod")), 
+                       executed = latest_commit_this_file)
   
   if(nrow(synapse_manifest_to_upload) > 0){
     for(file_number in seq_len(nrow(synapse_manifest_to_upload))){
@@ -126,11 +142,7 @@ if (!is.null(synFindEntityId(validated_date, config::get("PARQUET_FOLDER_ARCHIVE
                 parentId = tmp$parent,
                 name = new_fileName)
       
-      f <- synStore(f, 
-                    activityName = "Indexing", 
-                    activityDescription = "Indexing external parquet datasets",
-                    used = PARQUET_FOLDER_INTERNAL, 
-                    executed = latest_commit_this_file)
+      f <- synStore(f, activity = act)
       
     }
   }
