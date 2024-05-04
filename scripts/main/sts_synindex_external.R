@@ -135,11 +135,11 @@ system(sync_cmd)
 
 
 # Remove withdrawn participants -------------------------------------------
-source("~/recover-parquet-external/scripts/withdrawal/remove_withdrawn_participants.R")
+source("scripts/withdrawal/remove_withdrawn_participants.R")
 
 
 # Filter parquet datasets -------------------------------------------------
-source('~/recover-parquet-external/scripts/filtering/filtering.R')
+source('scripts/filtering/filtering.R')
 
 # Copy unfiltered parquet datasets to new location with filtered parquet datasets
 unlink(PARQUET_FINAL_LOCATION, recursive = T, force = T)
@@ -153,7 +153,7 @@ unlink(PARQUET_FILTERED_LOCATION, recursive = T, force = T)
 
 
 # De-identify parquet datasets --------------------------------------------
-source('~/recover-parquet-external/scripts/deidentification/deidentification.R')
+source('scripts/deidentification/deidentification.R')
 
 
 # Sync final parquets to bucket -------------------------------------------
