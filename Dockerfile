@@ -29,4 +29,4 @@ RUN sed -i -e "s|\"<PERSONAL_ACCESS_TOKEN>\"|\"\${AWS_SYNAPSE_TOKEN}\"\n|g" \
 CMD R -e "q()" \
     && sed -i -e "s|\${AWS_SYNAPSE_TOKEN}|$AWS_SYNAPSE_TOKEN|g"\
     /root/.aws/config \
-    && Rscript /root/recover-parquet-external/sts_synindex_external.R
+    && Rscript /root/recover-parquet-external/scripts/main/internal_to_external_staging.R
