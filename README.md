@@ -85,7 +85,7 @@ git clone https://github.com/Sage-Bionetworks/recover-parquet-external.git
 2. Modify the parameters in the [config](config/config.yml) as needed
 3. Run [install_requirements.R](install_requirements.R)
 
-4. Run [sts_synindex_external.R](scripts/main/sts_synindex_external.R) to generate the external parquet datasets in the staging locations (S3 and Synapse).
+4. Run [internal_to_external_staging.R](scripts/main/internal_to_external_staging.R) to generate the external parquet datasets in the staging locations (S3 and Synapse).
 5. Once the datasets in the staging location have been validated, run [staging_to_archive.R](scripts/main/staging_to_archive.R) to generate the validated external parquet datasets in the date-tagged prod Archive locations (S3 and Synapse).
 6. As needed, run [archive-to-current.R](scripts/main/archive-to-current.R) to update the Current Freeze version of the external parquet data in the appropriate locations (S3 and Synapse).
 7. **(Optional)** Setup a scheduled job (AWS, cron, etc.) using the docker image to run the pipeline at a set frequency or when certain conditions are met
