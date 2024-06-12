@@ -10,10 +10,11 @@ unlink('./dictionaries/', recursive = T, force = T)
 # Get dictionaries --------------------------------------------------------
 system('synapse get -r syn52316269 --downloadLocation ./dictionaries/ --manifest suppress')
 
-list.files("./dictionaries", full.names = T) %>% lapply(function(x) {
-  y <- x %>% stringr::str_remove_all("[0-9]")
-  file.rename(from = x, to = y)
-})
+list.files("./dictionaries", full.names = T) %>% 
+  lapply(function(x) {
+    y <- x %>% stringr::str_remove_all("[0-9]|_[0-9]+")
+    file.rename(from = x, to = y)
+  })
 
 junk <- lapply(list.files("./dictionaries/", full.names = T), function(f) {
   lines <- readLines(f)
@@ -21,7 +22,6 @@ junk <- lapply(list.files("./dictionaries/", full.names = T), function(f) {
   modified_lines <- lapply(lines, function(line) {
     line <- gsub('"', '', line)
     if (grepl(",APPROVED|,UNAPPROVED", line)) {
-      # line <- gsub("^(.*?)(,APPROVED|,approved|,UNAPPROVED|,unapproved)", '"\\1"\\2', line)
       line <- gsub('(.*?)"?(,APPROVED|,approved|,UNAPPROVED|,unapproved)', '"\\1"\\2', line)
     }
     return(line)
