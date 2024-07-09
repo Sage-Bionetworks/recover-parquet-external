@@ -66,8 +66,24 @@ if (!is.null(synFindEntityId(validated_date, config::get("PARQUET_FOLDER_ARCHIVE
   # Modify cohort identifier in dir name
   junk <- sapply(list.dirs(AWS_CURRENT_DOWNLOAD_LOCATION), replace_equal_with_underscore)
   
-  # Generate manifest of existing files
+  # Generate manifest of existing files and remove existing folders
   SYNAPSE_AUTH_TOKEN <- Sys.getenv('SYNAPSE_AUTH_TOKEN')
+  manifest_cmd <- glue::glue('SYNAPSE_AUTH_TOKEN="{SYNAPSE_AUTH_TOKEN}" synapse manifest --parent-id {PARQUET_FOLDER_CURRENT} --manifest ./current_manifest.tsv {AWS_CURRENT_DOWNLOAD_LOCATION}')
+  system(manifest_cmd)
+  
+  current_syn_folders <- 
+    read_tsv(
+      file = "current_manifest.tsv", 
+      show_col_types = FALSE
+    ) %>% 
+    pull(parent) %>% 
+    unique()
+  
+  syn_folders_removed <- 
+    lapply(current_syn_folders, function(x) {
+      synapser::synDelete(x)
+    })
+  
   manifest_cmd <- glue::glue('SYNAPSE_AUTH_TOKEN="{SYNAPSE_AUTH_TOKEN}" synapse manifest --parent-id {PARQUET_FOLDER_CURRENT} --manifest ./current_manifest.tsv {AWS_CURRENT_DOWNLOAD_LOCATION}')
   system(manifest_cmd)
   
