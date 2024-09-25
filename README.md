@@ -19,8 +19,8 @@ Your personal access token should have **View, Modify and Download** permissions
 ## Usage
 
 There are two methods to run this pipeline:
-1. [**Docker container**](#via-docker-container), or
-2. [**Manually**](#manually)
+1. [**Docker container**](#method-1-via-docker-container), or
+2. [**Manually**](#method-2-manually)
 
 ### Set Synapse Personal Access Token
 
