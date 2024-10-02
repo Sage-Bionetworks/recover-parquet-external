@@ -19,7 +19,14 @@ list.files("./dictionaries", full.names = T) %>%
 junk <- lapply(list.files("./dictionaries/", full.names = T), function(f) {
   lines <- readLines(f)
   
+  # Ensure there is a proper newline at the end
+  if (substr(lines[length(lines)], nchar(lines[length(lines)]), nchar(lines[length(lines)])) != "\n") {
+    lines[length(lines)] <- paste0(lines[length(lines)] , "\n")
+  }
+  
+  # Process and clean the lines
   modified_lines <- lapply(lines, function(line) {
+    line <- iconv(line, from = "UTF-8", to = "ASCII//TRANSLIT", sub = "")
     line <- gsub('"', '', line)
     if (grepl(",APPROVED|,UNAPPROVED", line)) {
       line <- gsub('(.*?)"?(,APPROVED|,approved|,UNAPPROVED|,unapproved)', '"\\1"\\2', line)
@@ -31,6 +38,7 @@ junk <- lapply(list.files("./dictionaries/", full.names = T), function(f) {
   
   writeLines(modified_lines, f)
 })
+
 
 store_dicts <- function(files_dir) {
   dicts <- list()
@@ -66,18 +74,24 @@ deidentify <- function(dicts_list, parquet_dir) {
     
     out <- df
     out[[var_name]] <- trimws(out[[var_name]])
-
+    
     needs_review <- character(0)
     
     for (j in 1:nrow(out)) {
       val <- out[[var_name]][j]
-      status <- dicts_list[[i]][[2]][which(dicts_list[[i]][[1]]==val)]
       
-      if (val %in% dicts_list[[i]][[var_name]]) {
+      # Find the status for the value
+      status_idx <- which(dicts_list[[i]][[1]] == val)
+      
+      if (length(status_idx) > 0) {
+        status <- dicts_list[[i]][[2]][status_idx]
+        
+        # Check the status and apply de-identification
         if (status == "UNAPPROVED") {
           out[[var_name]][j] <- NA
         }
       } else {
+        # No match in dictionary, mark for review and set value to NA
         needs_review <- c(needs_review, val)
         out[[var_name]][j] <- NA
       }
@@ -88,6 +102,7 @@ deidentify <- function(dicts_list, parquet_dir) {
     out_list[[i]] <- out
     review_list[[i]] <- needs_review
   }
+  
   names(out_list) <- names(dicts_list)
   names(review_list) <- names(dicts_list)
   
@@ -98,7 +113,6 @@ deidentify <- function(dicts_list, parquet_dir) {
 }
 
 deidentified_results <- deidentify(dicts, PARQUET_FINAL_LOCATION)
-
 
 # Write de-identified datasets to parquet datasets dir --------------------
 for (i in seq_along(deidentified_results$deidentified_datasets)) {
