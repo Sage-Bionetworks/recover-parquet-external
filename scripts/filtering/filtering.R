@@ -53,7 +53,7 @@ drop_cols_datasets <- function(dataset, columns=c(), input = AWS_PARQUET_DOWNLOA
       dplyr::select(!dplyr::any_of(columns)) %>% 
       arrow::write_dataset(path = final_path, 
                            max_open_files = 2048,
-                           max_rows_per_file = 5000000,
+                           max_rows_per_file = 50000000, # 50 Million max rows per file. Approx 600MB Max. Helps with fitbit intraday
                            partitioning = partitions, 
                            existing_data_behavior = 'delete_matching',
                            basename_template = paste0("part-0000{i}.", as.character("parquet")))

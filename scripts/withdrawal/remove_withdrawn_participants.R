@@ -44,6 +44,20 @@ participants_to_withdraw <-
   dplyr::pull(ParticipantIdentifier) %>% 
   unique()
 
+# Get list of Latest ParticipantIdentifiers to remove from Synapse file exports
+withdraw_participant_synapse_id <- 'syn68741789' # Files > Production Files > Withdrawn Participants
+participant_id_files <- synapser::synGetChildren(withdraw_participant_synapse_id)$asList() %>% 
+  data.table::rbindlist(fill = T) %>% 
+  dplyr::select(name, id)
+ids_to_remove <- lapply(participant_id_files$id, function(id_syn){
+  temp_file <- synapser::synGet(id_syn)$path %>% 
+    read.csv() 
+}) %>% data.table::rbindlist(fill = T)
+participants_to_withdraw_from_synapse <- ids_to_remove$record_id %>% unique()
+
+# Merge both lists of Participants to Withdraw
+participants_to_withdraw <- c(participants_to_withdraw, participants_to_withdraw_from_synapse) %>% unique()
+
 if (length(participants_to_withdraw) > 0) {
   # Store list of datasets that do not contain ParticipantIdentifier column
   contains_pid_false <- 
@@ -90,7 +104,7 @@ if (length(participants_to_withdraw) > 0) {
       arrow::write_dataset(
         path = file.path(POST_WITHDRAW_LOCATION, basename(x)),
         max_open_files = 2048,
-        max_rows_per_file = 5000000,
+        max_rows_per_file = 50000000, # 50 Million max rows per file. Approx 600MB Max. Helps with fitbit intraday
         partitioning = "cohort",
         existing_data_behavior = 'delete_matching',
         basename_template = paste0("part-0000{i}.", as.character("parquet"))
